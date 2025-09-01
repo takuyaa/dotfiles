@@ -63,6 +63,12 @@
     bash
   ];
 
+  # Keyboard remapping
+  system.keyboard = {
+    enableKeyMapping = true;
+    remapCapsLockToControl = true;
+  };
+
   # macOS System Preferences
   system.defaults = {
     # Dock
