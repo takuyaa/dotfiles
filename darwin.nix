@@ -2,20 +2,8 @@
 { pkgs, ... }:
 
 {
-  # System configuration
-  nixpkgs.hostPlatform = system;
-
   # Disable nix-darwin's Nix management to avoid conflict with Determinate.
   nix.enable = false;
-
-  # The user
-  users.knownUsers = [ username ];
-  users.users.${username} = {
-    name = username;
-    home = userHome;
-    shell = pkgs.bash;
-    uid = 503;
-  };
 
   # nix-homebrew configuration
   nix-homebrew = {
@@ -30,6 +18,9 @@
       "homebrew/homebrew-bundle" = homebrew-bundle;
     };
   };
+
+  # System configuration
+  nixpkgs.hostPlatform = system;
 
   # Homebrew configuration
   homebrew = {
@@ -54,6 +45,15 @@
   environment.shells = with pkgs; [
     bash
   ];
+
+  # The user
+  users.knownUsers = [ username ];
+  users.users.${username} = {
+    name = username;
+    home = userHome;
+    shell = pkgs.bash;
+    uid = 503;
+  };
 
   # Set Git commit hash for darwin-version
   system.configurationRevision = self.rev or self.dirtyRev or null;
