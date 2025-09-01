@@ -8,14 +8,6 @@
   # Disable nix-darwin's Nix management to avoid conflict with Determinate.
   nix.enable = false;
 
-  # Set Git commit hash for darwin-version
-  system.configurationRevision = self.rev or self.dirtyRev or null;
-
-  system.stateVersion = 5;
-
-  # Set primary user for homebrew and other user-specific options
-  system.primaryUser = username;
-
   # The user
   users.knownUsers = [ username ];
   users.users.${username} = {
@@ -63,11 +55,8 @@
     bash
   ];
 
-  # Keyboard remapping
-  system.keyboard = {
-    enableKeyMapping = true;
-    remapCapsLockToControl = true;
-  };
+  # Set Git commit hash for darwin-version
+  system.configurationRevision = self.rev or self.dirtyRev or null;
 
   # macOS System Preferences
   system.defaults = {
@@ -94,4 +83,15 @@
       KeyRepeat = 1;
     };
   };
+
+  # Keyboard remapping
+  system.keyboard = {
+    enableKeyMapping = true;
+    remapCapsLockToControl = true;
+  };
+
+  # Set primary user for homebrew and other user-specific options
+  system.primaryUser = username;
+
+  system.stateVersion = 5;
 }
