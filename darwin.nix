@@ -52,7 +52,7 @@
     name = username;
     home = userHome;
     shell = pkgs.bash;
-    uid = 503;
+    uid = 502;
   };
 
   # Set Git commit hash for darwin-version
