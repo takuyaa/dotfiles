@@ -35,6 +35,8 @@
     brews = [];
     casks = [
       "iterm2"
+      "notion"
+      "slack"
       "visual-studio-code"
       "warp"
     ];
