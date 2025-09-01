@@ -69,7 +69,9 @@
     # Finder
     finder = {
       AppleShowAllExtensions = true;
-      FXPreferredViewStyle = "clmv";
+      AppleShowAllFiles = true;
+      FXEnableExtensionChangeWarning = false;
+      FXPreferredViewStyle = "Nlsv";
       ShowPathbar = true;
       ShowStatusBar = true;
     };
