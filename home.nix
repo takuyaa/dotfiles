@@ -57,8 +57,8 @@
 
     # Kubernetes tools
     k9s
-    krew
     kubectl
+    kubectx
     kubernetes-helm
     stern
 
@@ -128,8 +128,8 @@
       kc = "kubectl config";
       kcx = "kubectl config use-context";
       kcxn = "kubectl config set-context --current --namespace";
-      kn = "kubectl ns";
-      kx = "kubectl ctx";
+      kn = "kubens";
+      kx = "kubectx";
     };
 
     profileExtra = ''
