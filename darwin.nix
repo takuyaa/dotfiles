@@ -34,11 +34,13 @@
     # All other packages (nix packages) are managed in home.nix
     brews = [];
     casks = [
+      "deepl"
       "docker"
       "iterm2"
       "lm-studio"
       "notion"
       "slack"
+      "spotify"
       "visual-studio-code"
       "warp"
     ];
