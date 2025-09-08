@@ -87,8 +87,8 @@
       AppleInterfaceStyle = "Dark";
       AppleKeyboardUIMode = 3;
       ApplePressAndHoldEnabled = false;
-      InitialKeyRepeat = 10;
-      KeyRepeat = 1;
+      InitialKeyRepeat = 15;
+      KeyRepeat = 2;
     };
   };
 
