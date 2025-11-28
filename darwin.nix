@@ -32,18 +32,27 @@
 
     # Homebrew casks managed via official nix-darwin integration
     # All other packages (nix packages) are managed in home.nix
-    brews = [];
+    brews = [
+      "mas"
+    ];
     casks = [
+      "chatgpt"
+      "claude"
       "deepl"
-      "docker"
+      "karabiner-elements"
       "iterm2"
       "lm-studio"
       "notion"
+      "orbstack"
       "slack"
       "spotify"
       "visual-studio-code"
       "warp"
     ];
+    
+    masApps = {
+      "Kindle" = 302584613;
+    };
   };
 
   # Shell configuration

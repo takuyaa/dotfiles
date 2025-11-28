@@ -9,13 +9,14 @@
   home.packages = with pkgs; [
     # Development tools
     buf
+    claude-code
+    codex
     copier
     fzf
     glow
+    (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
     jless
     jq
-    claude-code
-    (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
     tmux
     tree
     watch
@@ -115,6 +116,11 @@
       gm = "git merge";
       gp = "git push";
       gpl = "git pull";
+      gpr = ''
+        gh pr create \
+        --title "$(claude -p "以下の差分を読み、日本語で簡潔なPRタイトルを1行だけ生成してください（50文字以内、常体、Markdown装飾なし）。余計な説明は不要。\n\n$(git diff origin/main...HEAD --no-color)")" \
+        --body "$(claude -p "以下のPRテンプレートと差分を元に、PRの本文を日本語のMarkdown形式で作成してください。Markdownのコードブロック枠（\`\`\`）や挨拶は含めず、本文のみを出力してください。\n\nTemplate:\n$(cat "$(git rev-parse --show-toplevel)/.github/pull_request_template.md" 2>/dev/null || echo "")\n\nDiff:\n$(git diff origin/main...HEAD --no-color)")"
+      '';
       gr = "git reset";
       gs = "git status";
       gsw = "git switch";
