@@ -117,8 +117,8 @@
       gp = "git push";
       gpl = "git pull";
       gpr = ''
-        gh pr create \
-        --title "$(claude -p "以下の差分を読み、簡潔なPRタイトルをConventional Commits形式（<type>[optional scope]: <description>）で1行だけ生成してください（descriptionは50文字以内、常体、Markdown装飾なし）。余計な説明は不要。\n\n$(git diff origin/main...HEAD --no-color)")" \
+        gh pr create --draft \
+        --title "$(claude -p "以下の差分を読み、簡潔なPRタイトルをConventional Commits形式（<type>[optional scope]: <description>）で1行だけ生成してください。descriptionは小文字始まりで50文字以内の英語で、常体、Markdown装飾なし。余計な説明は不要。利用可能なtypeとscopeは .github/workflows/pr-title-lint.yml を参照してください。\n\n$(git diff origin/main...HEAD --no-color)")" \
         --body "$(claude -p "以下のPRテンプレートと差分を元に、PRの本文を日本語のMarkdown形式で作成してください。Markdownのコードブロック枠（\`\`\`）や挨拶は含めず、本文のみを出力してください。\n\nTemplate:\n$(cat "$(git rev-parse --show-toplevel)/.github/pull_request_template.md" 2>/dev/null || echo "")\n\nDiff:\n$(git diff origin/main...HEAD --no-color)")"
       '';
       gr = "git reset";
