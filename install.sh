@@ -27,6 +27,14 @@ install_nix_darwin() {
     sudo nix --extra-experimental-features 'flakes nix-command' run nix-darwin/nix-darwin-25.05#darwin-rebuild -- switch --flake .#macos
 }
 
+fix_homebrew_taps_permissions() {
+    local taps_dir="/opt/homebrew/Library/Taps"
+    if [[ -d "$taps_dir" && "$(stat -f '%Su' "$taps_dir")" != "$USER" ]]; then
+        echo "Fixing Homebrew Taps directory permissions..."
+        sudo chown "$USER" "$taps_dir"
+    fi
+}
+
 main() {
     echo "Starting dotfiles setup for macOS..."
     
@@ -40,6 +48,7 @@ main() {
     if command -v nix &>/dev/null; then
         echo "Setting up macOS configuration..."
         install_nix_darwin
+        fix_homebrew_taps_permissions
     else
         echo "Nix not available. Please restart your terminal and run again."
         exit 1
