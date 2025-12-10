@@ -32,8 +32,12 @@
 
     # Homebrew casks managed via official nix-darwin integration
     # All other packages (nix packages) are managed in home.nix
+    taps = [
+      "satococoa/tap"
+    ];
     brews = [
       "mas"
+      "satococoa/tap/wtp"
     ];
     casks = [
       "chatgpt"
