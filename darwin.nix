@@ -38,6 +38,7 @@
     brews = [
       "mas"
       "satococoa/tap/wtp"
+      "terminal-notifier"
     ];
     casks = [
       "chatgpt"
