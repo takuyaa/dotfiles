@@ -41,6 +41,7 @@
       "terminal-notifier"
     ];
     casks = [
+      "android-studio"
       "chatgpt"
       "claude"
       "deepl"
