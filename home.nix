@@ -10,6 +10,7 @@
     # Development tools
     buf
     claude-code
+    cocoapods
     codex
     copier
     fzf
@@ -48,10 +49,11 @@
     tre
 
     # Programming languages
+    go
+    jdk
     nodejs
     pnpm
     python3
-    go
     rustup
     uv
 
@@ -156,6 +158,11 @@
       
       # Enable color output for less
       export LESS="-R"
+
+      # Android SDK
+      export ANDROID_HOME=$HOME/Library/Android/sdk
+      export PATH=$PATH:$ANDROID_HOME/emulator
+      export PATH=$PATH:$ANDROID_HOME/platform-tools
     '';
 
     initExtra = ''
