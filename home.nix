@@ -209,6 +209,11 @@
         complete -F _kube_namespaces kn
       fi
       
+      # wtp setup
+      if command -v wtp &> /dev/null; then
+        eval "$(wtp shell-init bash)"
+      fi
+
       # Krew setup
       if command -v krew &> /dev/null; then
         export PATH="${userHome}/.krew/bin:$PATH"
