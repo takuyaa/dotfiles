@@ -101,11 +101,15 @@
       gca = "git commit --amend";
       gcm = "git commit --message";
       gcma = ''
-        git commit -m "$(claude -p 'Read the staged changes by running: git diff --cached --unified=0 --no-color. 
-        Produce exactly ONE concise English commit subject line (max 60 characters). 
-        Rules: imperative mood (Add/Update/Fix/Remove/Refactor/Rename), ASCII only, 
-        no quotes, no code blocks, no emojis, no trailing period, no explanations, and NO newlines. 
-        Return ONLY the single line.')"
+        git commit -m "$(claude -p "Analyze the staged changes below and generate a commit message.\
+        Requirements:\
+        - Exactly ONE line, max 60 characters\
+        - Imperative mood (Add/Update/Fix/Remove/Refactor/Rename)\
+        - ASCII only, no quotes, no code blocks, no emojis, no trailing period\
+        - Output ONLY the commit message itself, nothing else\
+        - Do NOT include any prefixes, suffixes, explanations, or conversation markers\
+        Staged changes:\
+        $(git diff --cached --unified=0 --no-color)")"
       '';
       gcl = "git clone";
       gco = "git checkout";
@@ -253,8 +257,6 @@
 
   programs.git = {
     enable = true;
-    userName = "Takuya Asano";
-    userEmail = "takuya.a@gmail.com";
     signing = {
       key = "95A468733FD3BFA52C2D99805E243D42C1E76500";
       signByDefault = true;
@@ -262,18 +264,22 @@
     ignores = [
       # macOS
       ".DS_Store"
-      
+
       # Claude
       "CLAUDE.md"
       "**/.claude/settings.local.json"
-      
+
       # Serena MCP
       ".serena/"
 
       # Playwright MCP
       ".playwright-mcp/"
     ];
-    extraConfig = {
+    settings = {
+      user = {
+        name = "Takuya Asano";
+        email = "takuya.a@gmail.com";
+      };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
       pull.rebase = false;
