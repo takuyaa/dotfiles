@@ -220,6 +220,11 @@
         complete -F _kube_namespaces kn
       fi
       
+      # mise setup
+      if command -v mise &> /dev/null; then
+        eval "$(mise activate bash)"
+      fi
+
       # wtp setup
       if command -v wtp &> /dev/null; then
         eval "$(wtp shell-init bash)"
