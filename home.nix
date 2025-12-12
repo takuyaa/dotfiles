@@ -15,6 +15,7 @@
     copier
     fzf
     glow
+    mise
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
     jless
     jq
