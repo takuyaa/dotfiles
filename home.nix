@@ -120,6 +120,7 @@
       gd = "git diff";
       gdc = "git diff --cached";
       gf = "git fetch";
+      gg = "git grep";
       gl = "git log";
       gl1 = "git log --oneline";
       gm = "git merge";
@@ -199,6 +200,7 @@
         __git_complete gd _git_diff
         __git_complete gdc _git_diff
         __git_complete gf _git_fetch
+        __git_complete gg _git_grep
         __git_complete gl _git_log
         __git_complete gl1 _git_log
         __git_complete gm _git_merge
