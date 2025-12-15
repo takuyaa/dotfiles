@@ -279,7 +279,6 @@
       ".DS_Store"
 
       # Claude
-      "CLAUDE.md"
       "**/.claude/settings.local.json"
 
       # Serena MCP
