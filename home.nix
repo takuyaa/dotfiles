@@ -96,6 +96,7 @@
       # Git aliases
       g = "git";
       ga = "git add";
+      gap = "git add -p";
       gb = "git branch";
       gba = "git branch -a";
       gbd = "git branch -d";
@@ -117,6 +118,7 @@
       gcl = "git clone";
       gco = "git checkout";
       gd = "git diff";
+      gdc = "git diff --cached";
       gf = "git fetch";
       gl = "git log";
       gm = "git merge";
@@ -182,6 +184,7 @@
       if type __git_complete &>/dev/null; then
         __git_complete g __git_main
         __git_complete ga _git_add
+        __git_complete gap _git_add
         __git_complete gb _git_branch
         __git_complete gba _git_branch
         __git_complete gbd _git_branch
@@ -193,6 +196,7 @@
         __git_complete gcl _git_clone
         __git_complete gco _git_checkout
         __git_complete gd _git_diff
+        __git_complete gdc _git_diff
         __git_complete gf _git_fetch
         __git_complete gl _git_log
         __git_complete gm _git_merge
