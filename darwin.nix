@@ -51,6 +51,7 @@
       "lm-studio"
       "notion"
       "orbstack"
+      "rectangle"
       "slack"
       "spotify"
       "visual-studio-code"
@@ -116,6 +117,12 @@
 
   # Set primary user for homebrew and other user-specific options
   system.primaryUser = username;
+
+  # Rectangle settings
+  system.activationScripts.postActivation.text = ''
+    # Enable launch at login for Rectangle
+    sudo -u ${username} defaults write com.knollsoft.Rectangle launchOnLogin -bool true
+  '';
 
   system.stateVersion = 5;
 }
