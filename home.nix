@@ -291,6 +291,7 @@
       window-padding-balance = true;
       window-decoration = false;
       macos-titlebar-style = "hidden";
+      macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       copy-on-select = "clipboard";
       command = "bash -l -c 'tmux new-session -A -s main'";
