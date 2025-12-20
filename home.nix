@@ -276,6 +276,25 @@
     enableBashIntegration = true;
   };
 
+  programs.ghostty = {
+    enable = true;
+    package = null;  # Installed via Homebrew cask
+    enableBashIntegration = true;
+    settings = {
+      font-size = 14;
+      theme = "Catppuccin Mocha";
+      cursor-style = "bar";
+      cursor-style-blink = false;
+      window-padding-x = 8;
+      window-padding-y = 8;
+      window-decoration = false;
+      macos-titlebar-style = "hidden";
+      mouse-hide-while-typing = true;
+      copy-on-select = "clipboard";
+      command = "bash -l -c 'tmux new-session -A -s main'";
+    };
+  };
+
   programs.git = {
     enable = true;
     signing = {
