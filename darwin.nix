@@ -45,6 +45,7 @@
       "chatgpt"
       "claude"
       "deepl"
+      "ghostty"
       "karabiner-elements"
       "iterm2"
       "lm-studio"
