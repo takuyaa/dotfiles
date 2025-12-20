@@ -296,7 +296,6 @@
       copy-on-select = "clipboard";
       command = "bash -l -c 'tmux new-session -A -s main'";
       confirm-close-surface = false;
-      keybind = "ctrl+alt+enter=toggle_fullscreen";
     };
   };
 
