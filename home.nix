@@ -288,6 +288,7 @@
       cursor-style-blink = false;
       window-padding-x = 8;
       window-padding-y = 8;
+      window-padding-balance = true;
       window-decoration = false;
       macos-titlebar-style = "hidden";
       mouse-hide-while-typing = true;
