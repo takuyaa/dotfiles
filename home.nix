@@ -282,6 +282,7 @@
     enableBashIntegration = true;
     settings = {
       font-size = 14;
+      font-feature = "-calt,-liga,-dlig";
       theme = "Catppuccin Mocha";
       cursor-style = "bar";
       cursor-style-blink = false;
