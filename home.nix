@@ -348,40 +348,40 @@
 
   programs.tmux = {
     enable = true;
-    baseIndex = 1;              # ウィンドウ番号を1から開始
-    escapeTime = 0;             # Escキーの遅延をなくす
-    historyLimit = 50000;       # スクロールバック履歴
-    keyMode = "emacs";          # Emacsキーバインド
-    mouse = true;               # マウスサポート
-    prefix = "C-t";             # prefixをCtrl-tに変更（Ctrl-bはEmacsの後退と競合）
+    baseIndex = 1;              # Start window numbering at 1
+    escapeTime = 0;             # No delay for Escape key
+    historyLimit = 50000;       # Scrollback buffer size
+    keyMode = "emacs";          # Emacs keybindings
+    mouse = true;               # Enable mouse support
+    prefix = "C-t";             # Use Ctrl-t as prefix (Ctrl-b conflicts with Emacs backward-char)
     terminal = "screen-256color";
     extraConfig = ''
-      # ペイン分割キーバインド
+      # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
 
-      # ペイン移動をEmacs風に (C-b + 矢印キーはデフォルトで有効)
+      # Emacs-style pane navigation
       bind C-p select-pane -U
       bind C-n select-pane -D
       bind C-b select-pane -L
       bind C-f select-pane -R
 
-      # ペインリサイズ
+      # Pane resizing
       bind -r M-Up resize-pane -U 5
       bind -r M-Down resize-pane -D 5
       bind -r M-Left resize-pane -L 5
       bind -r M-Right resize-pane -R 5
 
-      # 新しいウィンドウをカレントディレクトリで開く
+      # Open new window in current directory
       bind c new-window -c "#{pane_current_path}"
 
-      # ステータスバー
+      # Status bar
       set -g status-position top
       set -g status-style "bg=default,fg=white"
       set -g status-left "#[fg=green][#S] "
       set -g status-right "#[fg=cyan]%Y-%m-%d %H:%M"
 
-      # アクティブウィンドウのハイライト
+      # Highlight active window
       set -g window-status-current-style "fg=yellow,bold"
     '';
   };
