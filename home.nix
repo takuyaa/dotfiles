@@ -35,6 +35,7 @@
     # Git
     delta
     gh
+    ghq
     git-lfs
     lazygit
 
