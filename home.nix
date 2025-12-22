@@ -141,7 +141,7 @@
       gcd = "cd $(ghq list -p | fzf)";
 
       # wtp (git worktree)
-      wcd = "cd $(wtp list -q | fzf)";
+      wcd = "wtp cd $(wtp list -q | fzf)";
 
       # stern
       stern = "kubectl stern";
