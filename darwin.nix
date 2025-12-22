@@ -36,7 +36,6 @@
       "satococoa/tap"
     ];
     brews = [
-      "keeper-commander"
       "mas"
       "satococoa/tap/wtp"
       "terminal-notifier"
