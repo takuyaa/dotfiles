@@ -137,6 +137,9 @@
       gsw = "git switch";
       gtag = "git tag";
 
+      # ghq
+      gcd = "cd $(ghq list -p | fzf)";
+
       # stern
       stern = "kubectl stern";
 
