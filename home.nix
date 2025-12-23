@@ -138,7 +138,7 @@
       gtag = "git tag";
 
       # ghq
-      gcd = "cd $(ghq list -p | fzf)";
+      gcd = "dir=$(ghq list -p | fzf) && [ -n \"$dir\" ] && cd \"$dir\"";
 
       # wtp (git worktree)
       wcd = "wtp cd $(wtp list -q | fzf)";
