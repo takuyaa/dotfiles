@@ -41,6 +41,7 @@
       "terminal-notifier"
     ];
     casks = [
+      "font-plemol-jp-nf"
       "android-studio"
       "chatgpt"
       "claude"

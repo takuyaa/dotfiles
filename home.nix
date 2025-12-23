@@ -288,8 +288,8 @@
     package = null;  # Installed via Homebrew cask
     enableBashIntegration = true;
     settings = {
+      font-family = "PlemolJP Console NF";
       font-size = 14;
-      font-feature = "-calt,-liga,-dlig";
       theme = "Catppuccin Mocha";
       cursor-style = "bar";
       cursor-style-blink = false;
