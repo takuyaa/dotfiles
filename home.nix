@@ -366,7 +366,7 @@
     keyMode = "emacs";          # Emacs keybindings
     mouse = true;               # Enable mouse support
     prefix = "C-t";             # Use Ctrl-t as prefix (Ctrl-b conflicts with Emacs backward-char)
-    terminal = "screen-256color";
+    terminal = "tmux-256color";
     extraConfig = ''
       # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
