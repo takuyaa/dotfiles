@@ -164,7 +164,12 @@
       if [ -d "/etc/profiles/per-user/$USER/bin" ]; then
         export PATH="/etc/profiles/per-user/$USER/bin:$PATH"
       fi
-      
+
+      # Add Homebrew (Apple Silicon) to PATH
+      if [ -d "/opt/homebrew/bin" ]; then
+        export PATH="/opt/homebrew/bin:$PATH"
+      fi
+
       # Set Emacs as default editor
       export EDITOR="emacs"
       export VISUAL="emacs"

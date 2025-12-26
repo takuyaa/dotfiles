@@ -8,7 +8,7 @@
   # nix-homebrew configuration
   nix-homebrew = {
     enable = true;
-    enableRosetta = true;
+    enableRosetta = false;
     autoMigrate = true;
     user = username;
 
