@@ -161,6 +161,18 @@ in
       gr = "git reset";
       gs = "git status";
       gsw = "git switch";
+      gswa = ''
+        git switch -c "$(claude -p "Analyze the staged changes below and generate a Git branch name.\
+        Requirements:\
+        - Format: <type>/<short-description>\
+        - Types: feat, fix, refactor, docs, chore, test, style, perf, ci, build\
+        - Description: lowercase, hyphen-separated, max 40 characters\
+        - ASCII only, no quotes, no code blocks, no trailing slash\
+        - Output ONLY the branch name itself, nothing else\
+        - Examples: feat/add-user-auth, fix/null-pointer-exception, refactor/simplify-config\
+        Staged changes:\
+        $(git diff --cached --unified=0 --no-color)")"
+      '';
       gtag = "git tag";
 
       # ghq
