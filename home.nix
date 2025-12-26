@@ -170,8 +170,12 @@ in
         - ASCII only, no quotes, no code blocks, no trailing slash\
         - Output ONLY the branch name itself, nothing else\
         - Examples: feat/add-user-auth, fix/null-pointer-exception, refactor/simplify-config\
-        Staged changes:\
-        $(git diff --cached --unified=0 --no-color)")"
+        \
+        Files changed:\
+        $(git diff --cached --stat --no-color)\
+        \
+        Detailed changes:\
+        $(git diff --cached --unified=5 --no-color)")"
       '';
       gtag = "git tag";
 
