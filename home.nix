@@ -1,5 +1,27 @@
 { config, pkgs, username, userHome, ... }:
 
+let
+  linear-tui = pkgs.buildGoModule {
+    pname = "linear-tui";
+    version = "unstable-2024-12-25";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "Boostly";
+      repo = "linear-tui";
+      rev = "b3fc9bab6b02ca3ba4c77da85dfed9a666024aa0";
+      hash = "sha256-DMD2OVLUfiFDGhHeBkN+aN7gHCj4cWhGhBm33vUfXCY=";
+    };
+
+    vendorHash = "sha256-eRqZXgJR9woZDqh+LAL30EqnJV2vMBPh0aO6EicsUus=";
+
+    meta = with pkgs.lib; {
+      description = "A TUI for Linear";
+      homepage = "https://github.com/Boostly/linear-tui";
+      license = licenses.mit;
+      mainProgram = "linear-tui";
+    };
+  };
+in
 {
   home.username = username;
   home.homeDirectory = userHome;
@@ -66,6 +88,9 @@
     kubectx
     kubernetes-helm
     stern
+
+    # Custom packages
+    linear-tui
 
     # Homebrew casks are managed as Homebrew casks in flake.nix
   ];
