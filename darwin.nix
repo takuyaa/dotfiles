@@ -56,7 +56,6 @@
       "slack"
       "spotify"
       "visual-studio-code"
-      "warp"
     ];
     
     masApps = {
