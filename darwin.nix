@@ -37,6 +37,7 @@
     ];
     brews = [
       "mas"
+      "pam-reattach"
       "satococoa/tap/wtp"
       "terminal-notifier"
     ];
@@ -113,6 +114,12 @@
   system.keyboard = {
     enableKeyMapping = true;
     remapCapsLockToControl = true;
+  };
+
+  # Enable Touch ID for sudo authentication (with tmux support)
+  security.pam.services.sudo_local = {
+    touchIdAuth = true;
+    reattach = true;
   };
 
   # Set primary user for homebrew and other user-specific options
