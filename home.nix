@@ -142,7 +142,10 @@
       gcd = "dir=$(ghq list -p | fzf) && [ -n \"$dir\" ] && cd \"$dir\"";
 
       # wtp (git worktree)
-      wcd = "wtp cd $(wtp list -q | fzf)";
+      wtadd = "wtp add -b";
+      wtcd = "wtp cd $(wtp list -q | fzf)";
+      wtls = "wtp list";
+      wtrm = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && read -p \"Remove worktree '$wt'? [y/N] \" -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && wtp rm -f --with-branch \"$wt\"";
 
       # stern
       stern = "kubectl stern";
