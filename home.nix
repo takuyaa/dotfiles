@@ -184,7 +184,7 @@ in
 
       # wtp (git worktree)
       wtadd = "wtp add -b";
-      wtcd = "wtp cd $(wtp list -q | fzf)";
+      wtcd = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && cd $(wtp cd \"$wt\")";
       wtls = "wtp list";
       wtrm = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && read -p \"Remove worktree '$wt'? [y/N] \" -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && wtp rm -f --with-branch \"$wt\"";
 
@@ -288,11 +288,6 @@ in
       # mise setup
       if command -v mise &> /dev/null; then
         eval "$(mise activate bash)"
-      fi
-
-      # wtp setup
-      if command -v wtp &> /dev/null; then
-        eval "$(wtp shell-init bash)"
       fi
 
       # Krew setup
