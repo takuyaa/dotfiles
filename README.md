@@ -63,7 +63,7 @@ darwin-rebuild switch --flake .#macos
 ### Update all dependencies
 
 ```bash
-nix flake update
+flake-update
 rebuild
 ```
 
