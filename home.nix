@@ -160,14 +160,6 @@ in
       '';
       gr = "git reset";
       gs = "git status";
-      gsw = ''
-        if [ $# -eq 0 ]; then
-          branch=$(git branch --all --sort=-committerdate | grep -v HEAD | sed 's/.* //' | sed 's#remotes/origin/##' | awk '!seen[$0]++' | fzf)
-          [ -n "$branch" ] && git switch "$branch"
-        else
-          git switch "$@"
-        fi
-      '';
       gswa = ''
         git switch -c "$(claude -p "Analyze the staged changes below and generate a Git branch name.\
         Requirements:\
@@ -235,6 +227,16 @@ in
     '';
 
     initExtra = ''
+      # gsw function: git switch with fzf when no argument provided
+      gsw() {
+        if [ $# -eq 0 ]; then
+          branch=$(git branch --all --sort=-committerdate | grep -v HEAD | sed 's/.* //' | sed 's#remotes/origin/##' | awk '!seen[$0]++' | fzf)
+          [ -n "$branch" ] && git switch "$branch"
+        else
+          git switch "$@"
+        fi
+      }
+
       # Load git completion script
       if [ -f ${pkgs.git}/share/bash-completion/completions/git ]; then
         source ${pkgs.git}/share/bash-completion/completions/git
