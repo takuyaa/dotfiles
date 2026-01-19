@@ -319,9 +319,9 @@ in
               return 1
           fi
 
-          # Get worktree list (skip header)
+          # Get worktree list (quiet mode for full names without truncation)
           local worktrees
-          worktrees=$(wtp list 2>/dev/null | tail -n +3)
+          worktrees=$(wtp list -q 2>/dev/null)
 
           if [[ -z "$worktrees" ]]; then
               echo "No worktrees found" >&2
@@ -335,14 +335,12 @@ in
                   --height 40% \
                   --reverse \
                   --prompt="worktree> " \
-                  --header="Select a worktree to navigate to" \
-                  --preview='target=$(wtp cd -- $(echo {} | awk "{print \$2}") 2>/dev/null); echo "$target" && echo "---" && git -C "$target" log --oneline -5 2>/dev/null' \
-                  --preview-window=right:50%:wrap)
+                  --header="Select a worktree to navigate to")
           else
               echo "Available worktrees:" >&2
               echo "$worktrees" >&2
               echo "" >&2
-              echo -n "Enter branch name: " >&2
+              echo -n "Enter worktree name: " >&2
               read -r selected
           fi
 
@@ -350,32 +348,18 @@ in
               return 0
           fi
 
-          # Extract branch name (second column)
-          local branch
-          branch=$(echo "$selected" | awk '{print $2}')
-
-          # If no second column (manual input), use entire input
-          if [[ -z "$branch" ]]; then
-              branch="$selected"
-          fi
-
-          if [[ -z "$branch" ]]; then
-              echo "Error: Could not parse branch name" >&2
-              return 1
-          fi
-
-          # Get worktree path and cd
+          # Get worktree path and cd (selected is the full worktree name)
           local target_dir
-          target_dir=$(wtp cd -- "$branch" 2>&1)
+          target_dir=$(wtp cd -- "$selected" 2>&1)
           local wtp_exit=$?
 
           if [[ $wtp_exit -ne 0 ]]; then
-              echo "Error: wtp cd failed for branch '$branch': $target_dir" >&2
+              echo "Error: wtp cd failed for '$selected': $target_dir" >&2
               return 1
           fi
 
           if [[ -z "$target_dir" ]]; then
-              echo "Error: wtp cd returned empty path for branch: $branch" >&2
+              echo "Error: wtp cd returned empty path for: $selected" >&2
               return 1
           fi
 
@@ -385,7 +369,7 @@ in
           fi
 
           cd -- "$target_dir"
-          echo "Switched to: $branch" >&2
+          echo "Switched to: $selected" >&2
       }
     '';
   };
