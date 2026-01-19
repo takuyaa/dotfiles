@@ -182,9 +182,9 @@ in
       gcd = "dir=$(ghq list -p | fzf) && [ -n \"$dir\" ] && cd \"$dir\"";
 
       # wtp (git worktree)
-      wtcd = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && cd $(wtp cd \"$wt\")";
-      wtls = "wtp list";
-      wtrm = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && read -p \"Remove worktree '$wt'? [y/N] \" -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && wtp rm -f --with-branch \"$wt\"";
+      # wtcd = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && cd $(wtp cd \"$wt\")";
+      # wtls = "wtp list";
+      # wtrm = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && read -p \"Remove worktree '$wt'? [y/N] \" -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && wtp rm -f --with-branch \"$wt\"";
 
       # stern
       stern = "kubectl stern";
