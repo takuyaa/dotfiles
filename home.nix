@@ -392,6 +392,160 @@ in
     '';
   };
 
+  home.file.".claude/settings.json" = {
+    text = builtins.toJSON {
+      alwaysThinkingEnabled = true;
+      enabledMcpjsonServers = ["github" "linear-server"];
+      enableAllProjectMcpServers = true;
+      hooks = {
+        PreToolUse = [{
+          matcher = "AskUserQuestion";
+          hooks = [{
+            type = "command";
+            command = "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"idle_prompt\"}' | ~/.claude/notify.sh";
+          }];
+        }];
+        Stop = [{
+          matcher = "";
+          hooks = [{
+            type = "command";
+            command = "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"stop\"}' | ~/.claude/notify.sh";
+          }];
+        }];
+        Notification = [{
+          matcher = "permission_prompt";
+          hooks = [{
+            type = "command";
+            command = "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"permission_prompt\"}' | ~/.claude/notify.sh";
+          }];
+        }];
+      };
+      permissions = {
+        allow = [
+          "Bash(basename:*)"
+          "Bash(cal:*)"
+          "Bash(cut:*)"
+          "Bash(date:*)"
+          "Bash(diff:*)"
+          "Bash(dirname:*)"
+          "Bash(file:*)"
+          "Bash(gh run view:*)"
+          "Bash(git add:*)"
+          "Bash(git blame:*)"
+          "Bash(git diff:*)"
+          "Bash(git fetch:*)"
+          "Bash(git log:*)"
+          "Bash(git ls-files:*)"
+          "Bash(git ls-remote:*)"
+          "Bash(git ls-tree:*)"
+          "Bash(git pull:*)"
+          "Bash(git remote:*)"
+          "Bash(git rev-parse:*)"
+          "Bash(git shortlog:*)"
+          "Bash(git show:*)"
+          "Bash(git status:*)"
+          "Bash(git worktree:*)"
+          "Bash(grep:*)"
+          "Bash(head:*)"
+          "Bash(jq:*)"
+          "Bash(ls:*)"
+          "Bash(mkdir:*)"
+          "Bash(pwd:*)"
+          "Bash(realpath:*)"
+          "Bash(sort:*)"
+          "Bash(stat:*)"
+          "Bash(tail:*)"
+          "Bash(touch:*)"
+          "Bash(tr:*)"
+          "Bash(tree:*)"
+          "Bash(uniq:*)"
+          "Bash(wc:*)"
+          "Bash(which:*)"
+          "WebFetch(domain:code.claude.com)"
+          "WebFetch(domain:docs.anthropic.com)"
+          "WebFetch(domain:docs.claude.com)"
+          "WebFetch(domain:docs.docker.com)"
+          "WebFetch(domain:github.com)"
+          "WebSearch"
+          "mcp__github__get_commit"
+          "mcp__github__get_file_contents"
+          "mcp__github__get_label"
+          "mcp__github__get_latest_release"
+          "mcp__github__get_me"
+          "mcp__github__get_release_by_tag"
+          "mcp__github__get_tag"
+          "mcp__github__get_team_members"
+          "mcp__github__get_teams"
+          "mcp__github__issue_read"
+          "mcp__github__list_branches"
+          "mcp__github__list_commits"
+          "mcp__github__list_issue_types"
+          "mcp__github__list_issues"
+          "mcp__github__list_pull_requests"
+          "mcp__github__list_releases"
+          "mcp__github__list_tags"
+          "mcp__github__pull_request_read"
+          "mcp__github__search_code"
+          "mcp__github__search_issues"
+          "mcp__github__search_pull_requests"
+          "mcp__github__search_repositories"
+          "mcp__github__search_users"
+          "mcp__linear-server__get_document"
+          "mcp__linear-server__get_issue"
+          "mcp__linear-server__get_issue_status"
+          "mcp__linear-server__get_project"
+          "mcp__linear-server__get_team"
+          "mcp__linear-server__get_user"
+          "mcp__linear-server__list_comments"
+          "mcp__linear-server__list_cycles"
+          "mcp__linear-server__list_documents"
+          "mcp__linear-server__list_issue_labels"
+          "mcp__linear-server__list_issue_statuses"
+          "mcp__linear-server__list_issues"
+          "mcp__linear-server__list_project_labels"
+          "mcp__linear-server__list_projects"
+          "mcp__linear-server__list_teams"
+          "mcp__linear-server__list_users"
+          "mcp__linear-server__search_documentation"
+          "mcp__notion__notion-fetch"
+          "mcp__notion__notion-get-comments"
+          "mcp__notion__notion-get-self"
+          "mcp__notion__notion-get-teams"
+          "mcp__notion__notion-get-user"
+          "mcp__notion__notion-get-users"
+          "mcp__notion__notion-query-data-sources"
+          "mcp__notion__notion-search"
+        ];
+        deny = [];
+        ask = [];
+      };
+      language = "japanese";
+    };
+  };
+
+  home.file.".claude/notify.sh" = {
+    executable = true;
+    text = ''
+      #!/bin/bash
+      input=$(cat)
+      cwd=$(echo "$input" | jq -r '.cwd')
+      project=$(basename "$cwd")
+      type=$(echo "$input" | jq -r '.notification_type')
+
+      case "$type" in
+        permission_prompt) msg="Waiting for permission"; sound="Ping" ;;
+        idle_prompt)       msg="Waiting for input";      sound="Purr" ;;
+        stop)              msg="Task completed";         sound="Glass" ;;
+        *)                 msg="Notification";           sound="default" ;;
+      esac
+
+      args=(-title "Claude Code" -subtitle "$project" -message "$msg" -sound "$sound")
+      [[ -n "$__CFBundleIdentifier" ]] && args+=(-activate "$__CFBundleIdentifier")
+
+      terminal-notifier "''${args[@]}"
+    '';
+  };
+
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;  # This automatically adds direnv hook to bash
