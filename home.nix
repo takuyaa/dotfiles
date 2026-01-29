@@ -37,6 +37,8 @@ in
     copier
     fzf
     glow
+    livekit
+    livekit-cli
     mise
     shellcheck
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
@@ -517,6 +519,16 @@ in
 
       # Highlight active window
       set -g window-status-current-style "fg=yellow,bold"
+
+      # Pane styling - dim inactive panes to highlight active pane
+      set -g window-style "fg=colour240,bg=colour235"
+      set -g window-active-style "fg=default,bg=default"
+      set -g pane-border-style "fg=colour238"
+      set -g pane-active-border-style "fg=green"
+      set -g pane-border-lines heavy
+      set -g pane-border-indicators arrows
+      set -g pane-border-status top
+      set -g pane-border-format " #[fg=colour240]#{pane_index} #{?pane_active,#[fg=green]●,#[fg=colour238]○} #[fg=colour240]#{pane_current_command}#[default] "
     '';
   };
 
