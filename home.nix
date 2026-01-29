@@ -523,6 +523,19 @@ in
     };
   };
 
+  home.file.".claude/CLAUDE.md".text = ''
+    # Global Claude Code Settings
+
+    ~/.claude/settings.json and ~/.claude/notify.sh are managed by Nix (Home Manager).
+    They are read-only symlinks and must not be edited directly.
+
+    To change settings:
+    1. Edit ~/ghq/github.com/takuyaa/dotfiles/home.nix
+    2. Run `rebuild`
+
+    Private instructions should be placed in ~/.claude/CLAUDE.local.md (gitignored).
+  '';
+
   home.file.".claude/notify.sh" = {
     executable = true;
     text = ''
@@ -597,6 +610,7 @@ in
 
       # Claude
       "**/.claude/settings.local.json"
+      "CLAUDE.local.md"
 
       # Serena MCP
       ".serena/"
