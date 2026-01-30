@@ -135,7 +135,7 @@ in
       gca = "git commit --amend";
       gcm = "git commit --message";
       gcma = ''
-        git commit -m "$(claude -p "Analyze the staged changes below and generate a commit message.\
+        git commit -m "$(claude -p --no-session-persistence "Analyze the staged changes below and generate a commit message.\
         Requirements:\
         - Exactly ONE line, max 60 characters\
         - Imperative mood (Add/Update/Fix/Remove/Refactor/Rename)\
