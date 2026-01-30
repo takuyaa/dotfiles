@@ -31,6 +31,7 @@ in
   home.packages = with pkgs; [
     # Development tools
     buf
+    terminal-notifier
     claude-code
     cocoapods
     codex

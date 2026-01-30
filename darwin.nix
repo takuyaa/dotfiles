@@ -39,7 +39,6 @@
       "mas"
       "pam-reattach"
       "satococoa/tap/wtp"
-      "terminal-notifier"
     ];
     casks = [
       "font-plemol-jp-nf"
