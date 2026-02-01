@@ -82,6 +82,7 @@ in
     nodejs
     pnpm
     python3
+    python3Packages.huggingface-hub
     rustup
     uv
 
@@ -143,7 +144,7 @@ in
         - Output ONLY the commit message itself, nothing else\
         - Do NOT include any prefixes, suffixes, explanations, or conversation markers\
         Staged changes:\
-        $(git diff --cached --unified=0 --no-color)")"
+        $(git diff --cached --unified=0 --no-color | head -c 8000)")"
       '';
       gcl = "git clone";
       gco = "git checkout";
@@ -203,7 +204,12 @@ in
     profileExtra = ''
       # Silence macOS bash deprecation warning
       export BASH_SILENCE_DEPRECATION_WARNING=1
-      
+
+      # Add ~/.local/bin to PATH
+      if [ -d "$HOME/.local/bin" ]; then
+        export PATH="$HOME/.local/bin:$PATH"
+      fi
+
       # Add per-user profile to PATH for home-manager packages
       if [ -d "/etc/profiles/per-user/$USER/bin" ]; then
         export PATH="/etc/profiles/per-user/$USER/bin:$PATH"
@@ -225,6 +231,11 @@ in
       export ANDROID_HOME=$HOME/Library/Android/sdk
       export PATH=$PATH:$ANDROID_HOME/emulator
       export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+      # GitHub token for API access
+      if command -v gh &> /dev/null; then
+        GITHUB_TOKEN=$(gh auth token 2>/dev/null) && export GITHUB_TOKEN
+      fi
     '';
 
     initExtra = ''
@@ -427,6 +438,7 @@ in
           "Bash(cal:*)"
           "Bash(cut:*)"
           "Bash(date:*)"
+          "Bash(darwin-rebuild list-generations:*)"
           "Bash(diff:*)"
           "Bash(dirname:*)"
           "Bash(file:*)"
@@ -451,6 +463,18 @@ in
           "Bash(jq:*)"
           "Bash(ls:*)"
           "Bash(mkdir:*)"
+          "Bash(nix derivation show:*)"
+          "Bash(nix flake info:*)"
+          "Bash(nix flake metadata:*)"
+          "Bash(nix flake show:*)"
+          "Bash(nix hash:*)"
+          "Bash(nix log:*)"
+          "Bash(nix path-info:*)"
+          "Bash(nix registry list:*)"
+          "Bash(nix search:*)"
+          "Bash(nix show-config:*)"
+          "Bash(nix store ls:*)"
+          "Bash(nix why-depends:*)"
           "Bash(pwd:*)"
           "Bash(realpath:*)"
           "Bash(sort:*)"
