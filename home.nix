@@ -136,14 +136,18 @@ in
       gca = "git commit --amend";
       gcm = "git commit --message";
       gcma = ''
-        git commit -m "$(claude -p --no-session-persistence "Analyze the staged changes below and generate a commit message.\
-        Requirements:\
-        - Exactly ONE line, max 60 characters\
-        - Imperative mood (Add/Update/Fix/Remove/Refactor/Rename)\
-        - ASCII only, no quotes, no code blocks, no emojis, no trailing period\
-        - Output ONLY the commit message itself, nothing else\
-        - Do NOT include any prefixes, suffixes, explanations, or conversation markers\
-        Staged changes:\
+        git commit -m "$(claude -p --no-session-persistence "Analyze the staged changes below and generate a commit message.
+        Requirements:
+        - Exactly ONE line, max 60 characters
+        - Imperative mood (Add/Update/Fix/Remove/Refactor/Rename)
+        - ASCII only, no quotes, no code blocks, no emojis, no trailing period
+        - Output ONLY the commit message itself, nothing else
+        - Do NOT include any prefixes, suffixes, explanations, or conversation markers
+
+        Stat:
+        $(git diff --cached --stat --no-color)
+
+        Diff:
         $(git diff --cached --unified=0 --no-color | head -c 8000)")"
       '';
       gcl = "git clone";
