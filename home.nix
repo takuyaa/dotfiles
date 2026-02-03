@@ -96,6 +96,47 @@ in
     # Custom packages
     linear-tui
 
+    # tmux helper: show git branch or basename for window status
+    (writeShellScriptBin "tmux-window-info" ''
+      path="$1"
+      max=24
+      branch=$(cd "$path" && git rev-parse --abbrev-ref HEAD 2>/dev/null)
+      if [ -n "$branch" ]; then
+        repo=$(cd "$path" && basename "$(git rev-parse --show-toplevel)")
+        result="$repo:$branch"
+      else
+        result=$(basename "$path")
+      fi
+      if [ "''${#result}" -le "$max" ]; then
+        echo "$result"
+      else
+        echo "''${result:0:$((max-1))}…"
+      fi
+    '')
+
+    # tmux helper: show git branch or truncated path in pane border
+    (writeShellScriptBin "tmux-pane-info" ''
+      path="$1"
+      width="$2"
+
+      # Try git branch first
+      branch=$(cd "$path" && git rev-parse --abbrev-ref HEAD 2>/dev/null)
+      if [ -n "$branch" ]; then
+        echo "$branch"
+        exit 0
+      fi
+
+      # Fall back to truncated directory path
+      p="''${path/#$HOME/~}"
+      max=$(( width / 3 ))
+      [ "$max" -lt 10 ] && max=10
+      if [ "''${#p}" -le "$max" ]; then
+        echo "$p"
+      else
+        echo "…''${p: -$(( max - 1 ))}"
+      fi
+    '')
+
     # Homebrew casks are managed as Homebrew casks in flake.nix
   ];
 
@@ -714,18 +755,21 @@ in
       set -g status-left "#[fg=green][#S] "
       set -g status-right "#[fg=cyan]%Y-%m-%d %H:%M"
 
-      # Highlight active window
+      # Window status - show git branch or directory basename
+      set -g window-status-format "#I:#(tmux-window-info '#{pane_current_path}')#F"
+      set -g window-status-current-format "#I:#(tmux-window-info '#{pane_current_path}')#F"
       set -g window-status-current-style "fg=yellow,bold"
 
       # Pane styling - dim inactive panes to highlight active pane
-      set -g window-style "fg=colour240,bg=colour235"
-      set -g window-active-style "fg=default,bg=default"
+      set -g window-style "fg=colour240,bg=terminal"
+      set -g window-active-style "fg=terminal,bg=terminal"
       set -g pane-border-style "fg=colour238"
       set -g pane-active-border-style "fg=green"
       set -g pane-border-lines heavy
       set -g pane-border-indicators arrows
       set -g pane-border-status top
-      set -g pane-border-format " #[fg=colour240]#{pane_index} #{?pane_active,#[fg=green]●,#[fg=colour238]○} #[fg=colour240]#{pane_current_command}#[default] "
+      set -g status-interval 5
+      set -g pane-border-format " #[fg=colour240]#{pane_index} #{?pane_active,#[fg=green]●,#[fg=colour238]○} #[fg=colour240]#{pane_current_command} #[fg=magenta]#(tmux-pane-info '#{pane_current_path}' #{pane_width})#[default] "
     '';
   };
 
