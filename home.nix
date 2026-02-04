@@ -454,6 +454,9 @@ in
       alwaysThinkingEnabled = true;
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
+      env = {
+        ENABLE_TOOL_SEARCH = "true";
+      };
       hooks = {
         PreToolUse = [{
           matcher = "AskUserQuestion";
