@@ -452,7 +452,7 @@ in
   home.file.".claude/settings.json" = {
     text = builtins.toJSON {
       alwaysThinkingEnabled = true;
-      enabledMcpjsonServers = ["github" "linear-server"];
+      enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
       hooks = {
         PreToolUse = [{
@@ -537,29 +537,6 @@ in
           "WebFetch(domain:docs.docker.com)"
           "WebFetch(domain:github.com)"
           "WebSearch"
-          "mcp__github__get_commit"
-          "mcp__github__get_file_contents"
-          "mcp__github__get_label"
-          "mcp__github__get_latest_release"
-          "mcp__github__get_me"
-          "mcp__github__get_release_by_tag"
-          "mcp__github__get_tag"
-          "mcp__github__get_team_members"
-          "mcp__github__get_teams"
-          "mcp__github__issue_read"
-          "mcp__github__list_branches"
-          "mcp__github__list_commits"
-          "mcp__github__list_issue_types"
-          "mcp__github__list_issues"
-          "mcp__github__list_pull_requests"
-          "mcp__github__list_releases"
-          "mcp__github__list_tags"
-          "mcp__github__pull_request_read"
-          "mcp__github__search_code"
-          "mcp__github__search_issues"
-          "mcp__github__search_pull_requests"
-          "mcp__github__search_repositories"
-          "mcp__github__search_users"
           "mcp__linear-server__get_document"
           "mcp__linear-server__get_issue"
           "mcp__linear-server__get_issue_status"
