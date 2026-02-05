@@ -244,6 +244,9 @@ in
       kcxn = "kubectl config set-context --current --namespace";
       kn = "kubens";
       kx = "kubectx";
+
+      # k9s with TERM fix for tmux (https://github.com/derailed/k9s/issues/3722)
+      k9s = "TERM=xterm-256color k9s";
     };
 
     profileExtra = ''
