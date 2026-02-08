@@ -80,7 +80,7 @@ in
     # Programming languages
     go
     jdk
-    nodejs
+    nodejs_22
     pnpm
     python3
     python3Packages.huggingface-hub
