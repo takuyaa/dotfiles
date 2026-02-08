@@ -31,6 +31,7 @@ in
   home.packages = with pkgs; [
     # Development tools
     buf
+    postgresql
     terminal-notifier
     claude-code
     cocoapods
