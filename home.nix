@@ -281,9 +281,12 @@ in
       export PATH=$PATH:$ANDROID_HOME/emulator
       export PATH=$PATH:$ANDROID_HOME/platform-tools
 
-      # GitHub token for API access
+      # GitHub token for API access (also configures Nix to avoid rate limits)
       if command -v gh &> /dev/null; then
         GITHUB_TOKEN=$(gh auth token 2>/dev/null) && export GITHUB_TOKEN
+        if [ -n "$GITHUB_TOKEN" ]; then
+          export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
+        fi
       fi
     '';
 
