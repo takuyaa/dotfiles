@@ -705,6 +705,9 @@ in
   programs.starship = {
     enable = true;
     enableBashIntegration = true;  # This automatically adds starship init to bash
+    settings = {
+      command_timeout = 1000;  # Increase from 500ms default to avoid timeout warnings
+    };
   };
 
   programs.tmux = {
