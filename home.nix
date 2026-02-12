@@ -36,6 +36,7 @@ in
     claude-code
     cocoapods
     codex
+    cookiecutter
     copier
     fzf
     glow
