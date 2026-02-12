@@ -46,6 +46,7 @@ in
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
     jless
     jq
+    jwt-cli
     tree
     watch
     yq
