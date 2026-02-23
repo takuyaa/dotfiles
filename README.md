@@ -41,6 +41,24 @@ cd ~/ghq/github.com/takuyaa/dotfiles
 nix run home-manager -- switch -b backup --flake .#takuya-a
 ```
 
+#### Post-Bootstrap
+
+Authenticate with GitHub:
+
+```bash
+gh auth login
+```
+
+Generate a GPG signing key and register it on [GitHub](https://github.com/settings/gpg/new):
+
+```bash
+gpg --full-generate-key          # Choose ECC (option 9)
+gpg --list-secret-keys --keyid-format=long  # Note the key ID
+gpg --armor --export <KEY_ID>    # Copy to GitHub
+```
+
+Then update `home-linux.nix` with the new key ID and `rebuild`.
+
 ## Daily Usage
 
 Apply configuration changes:
