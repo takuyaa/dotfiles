@@ -16,6 +16,10 @@
   programs.bash.profileExtra = lib.mkAfter ''
     export NPM_CONFIG_PREFIX="$HOME/.npm-global"
     export PATH="$HOME/.npm-global/bin:$PATH"
+
+    if [ ! -x "$HOME/.npm-global/bin/happy" ]; then
+      npm install -g happy-coder @anthropic-ai/claude-code
+    fi
   '';
 
   # gpg-agent pinentry (headless server)
