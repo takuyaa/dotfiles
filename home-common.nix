@@ -264,9 +264,9 @@ in
       export NPM_CONFIG_PREFIX="$HOME/.npm-global"
       export PATH="$HOME/.npm-global/bin:$PATH"
 
-      # Auto-install claude-code via npm global if not present
-      if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/claude" ]; then
-        npm install -g @anthropic-ai/claude-code
+      # Auto-install Claude Code via native installer if not present
+      if [ ! -x "$HOME/.claude/local/bin/claude" ]; then
+        curl -fsSL https://claude.ai/install.sh | bash
       fi
     '';
 
