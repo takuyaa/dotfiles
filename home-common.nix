@@ -259,6 +259,15 @@ in
           export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
         fi
       fi
+
+      # npm global prefix (Nix's nodejs is read-only)
+      export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+      export PATH="$HOME/.npm-global/bin:$PATH"
+
+      # Auto-install claude-code via npm global if not present
+      if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/claude" ]; then
+        npm install -g @anthropic-ai/claude-code
+      fi
     '';
 
     initExtra = ''

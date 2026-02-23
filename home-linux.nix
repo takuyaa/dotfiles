@@ -11,14 +11,10 @@
   programs.bash.shellAliases.rebuild =
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
-  # npm global prefix (Nix's nodejs is read-only)
-  # Happy CLI requires claude-code to be installed via npm global
+  # Auto-install Happy CLI via npm global if not present
   programs.bash.profileExtra = lib.mkAfter ''
-    export NPM_CONFIG_PREFIX="$HOME/.npm-global"
-    export PATH="$HOME/.npm-global/bin:$PATH"
-
-    if [ ! -x "$HOME/.npm-global/bin/happy" ]; then
-      npm install -g happy-coder @anthropic-ai/claude-code
+    if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
+      npm install -g happy-coder
     fi
   '';
 
