@@ -12,7 +12,7 @@
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
   # Happy CLI (https://happy.engineering)
-  programs.bash.shellAliases.happy = "npx happy-coder";
+  programs.bash.shellAliases.happy = "npx -p happy-coder happy";
 
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
