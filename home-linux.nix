@@ -35,6 +35,9 @@
     fi
   '';
 
+  # GPG signing key (dev-01 specific)
+  programs.git.signing.key = "F20538F59AADFFF0";
+
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
 
