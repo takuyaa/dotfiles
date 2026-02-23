@@ -16,7 +16,7 @@
     };
     Service = {
       Type = "simple";
-      ExecStart = "${pkgs.code-server}/bin/code-server --bind-addr 127.0.0.1:8080";
+      ExecStart = "${pkgs.code-server}/bin/code-server --bind-addr 0.0.0.0:8080";
       Restart = "on-failure";
     };
     Install = {
