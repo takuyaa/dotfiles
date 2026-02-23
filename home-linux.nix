@@ -11,12 +11,8 @@
   programs.bash.shellAliases.rebuild =
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
-  # Install happy-coder CLI globally via npm if not already installed
-  programs.bash.profileExtra = lib.mkAfter ''
-    if command -v npm &> /dev/null && ! npm list -g happy-coder &> /dev/null; then
-      npm install -g happy-coder
-    fi
-  '';
+  # Happy CLI (https://happy.engineering)
+  programs.bash.shellAliases.happy = "npx happy-coder";
 
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
