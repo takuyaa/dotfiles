@@ -5,7 +5,24 @@
   # Linux-specific packages
   home.packages = with pkgs; [
     iproute2
+    code-server
   ];
+
+  # code-server systemd user service
+  systemd.user.services.code-server = {
+    Unit = {
+      Description = "VS Code in the browser";
+      After = [ "network.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.code-server}/bin/code-server --bind-addr 127.0.0.1:8080";
+      Restart = "on-failure";
+    };
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
+  };
 
   # rebuild alias (Linux uses standalone home-manager)
   programs.bash.shellAliases.rebuild =
