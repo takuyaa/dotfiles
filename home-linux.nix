@@ -9,7 +9,7 @@
 
   # rebuild alias (Linux uses standalone home-manager)
   programs.bash.shellAliases.rebuild =
-    "home-manager switch --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
+    "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;

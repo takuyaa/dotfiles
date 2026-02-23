@@ -27,7 +27,6 @@ in
   home.homeDirectory = userHome;
 
   home.stateVersion = "24.05";
-  home.backupFileExtension = "backup";
 
   home.packages = with pkgs; [
     # Development tools

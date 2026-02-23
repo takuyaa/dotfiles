@@ -11,9 +11,9 @@ update:
 	sudo darwin-rebuild switch --flake .#macos
 else
 rebuild:
-	home-manager switch --flake .#takuya-a
+	home-manager switch -b backup --flake .#takuya-a
 
 update:
 	nix flake update
-	home-manager switch --flake .#takuya-a
+	home-manager switch -b backup --flake .#takuya-a
 endif
