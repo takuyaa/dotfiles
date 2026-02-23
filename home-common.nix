@@ -265,7 +265,7 @@ in
       export PATH="$HOME/.npm-global/bin:$PATH"
 
       # Auto-install Claude Code via native installer if not present
-      if [ ! -x "$HOME/.claude/local/bin/claude" ]; then
+      if [ ! -x "$HOME/.local/bin/claude" ]; then
         curl -fsSL https://claude.ai/install.sh | bash
       fi
     '';
