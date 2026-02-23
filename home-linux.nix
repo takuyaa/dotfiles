@@ -11,8 +11,12 @@
   programs.bash.shellAliases.rebuild =
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
-  # Happy CLI (https://happy.engineering)
-  programs.bash.shellAliases.happy = "npx -p happy-coder happy";
+  # npm global prefix (Nix's nodejs is read-only)
+  # Happy CLI requires claude-code to be installed via npm global
+  programs.bash.profileExtra = lib.mkAfter ''
+    export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+    export PATH="$HOME/.npm-global/bin:$PATH"
+  '';
 
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
