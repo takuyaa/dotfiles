@@ -32,7 +32,6 @@ in
     # Development tools
     buf
     postgresql
-    claude-code
     codex
     copier
     fzf
