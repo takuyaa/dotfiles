@@ -38,7 +38,7 @@ This will install Nix (via Determinate Systems installer), nix-darwin, and apply
 ```bash
 git clone https://github.com/takuyaa/dotfiles.git ~/ghq/github.com/takuyaa/dotfiles
 cd ~/ghq/github.com/takuyaa/dotfiles
-nix run home-manager -- switch --flake .#takuya-a
+nix run home-manager -- switch -b backup --flake .#takuya-a
 ```
 
 ## Daily Usage
