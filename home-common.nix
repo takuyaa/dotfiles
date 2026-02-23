@@ -611,6 +611,7 @@ in
         format = "openpgp";
         openpgp.program = "${pkgs.gnupg}/bin/gpg";
       };
+      credential."https://github.com".helper = "${pkgs.gh}/bin/gh auth git-credential";
     };
   };
 
