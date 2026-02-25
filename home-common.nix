@@ -1,4 +1,4 @@
-{ config, pkgs, username, userHome, ... }:
+{ config, pkgs, lib, username, userHome, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -32,9 +32,6 @@ in
     # Development tools
     buf
     postgresql
-    terminal-notifier
-    claude-code
-    cocoapods
     codex
     cookiecutter
     copier
@@ -56,7 +53,6 @@ in
     # Network tools
     curl
     grpcurl
-    iproute2mac
     mtr
     nmap
     rsync
@@ -140,8 +136,6 @@ in
         echo "…''${p: -$(( max - 1 ))}"
       fi
     '')
-
-    # Homebrew casks are managed as Homebrew casks in flake.nix
   ];
 
   programs.bash = {
@@ -163,7 +157,6 @@ in
       tldr = "tldr --color always";
 
       # Nix
-      rebuild = "sudo darwin-rebuild switch --flake .#macos";
       flake-update = "nix flake update";
 
       # Emacs
@@ -234,10 +227,6 @@ in
       # ghq
       gcd = "dir=$(ghq list -p | fzf) && [ -n \"$dir\" ] && cd \"$dir\"";
 
-      # wtp (git worktree)
-      # wtls = "wtp list";
-      # wtrm = "wt=$(wtp list -q | fzf) && [ -n \"$wt\" ] && read -p \"Remove worktree '$wt'? [y/N] \" -n 1 -r && echo && [[ $REPLY =~ ^[Yy]$ ]] && wtp rm -f --with-branch \"$wt\"";
-
       # stern
       stern = "kubectl stern";
 
@@ -254,35 +243,17 @@ in
     };
 
     profileExtra = ''
-      # Silence macOS bash deprecation warning
-      export BASH_SILENCE_DEPRECATION_WARNING=1
-
       # Add ~/.local/bin to PATH
       if [ -d "$HOME/.local/bin" ]; then
         export PATH="$HOME/.local/bin:$PATH"
       fi
 
-      # Add per-user profile to PATH for home-manager packages
-      if [ -d "/etc/profiles/per-user/$USER/bin" ]; then
-        export PATH="/etc/profiles/per-user/$USER/bin:$PATH"
-      fi
-
-      # Add Homebrew (Apple Silicon) to PATH
-      if [ -d "/opt/homebrew/bin" ]; then
-        export PATH="/opt/homebrew/bin:$PATH"
-      fi
-
       # Set Emacs as default editor
       export EDITOR="emacs"
       export VISUAL="emacs"
-      
+
       # Enable color output for less
       export LESS="-R"
-
-      # Android SDK
-      export ANDROID_HOME=$HOME/Library/Android/sdk
-      export PATH=$PATH:$ANDROID_HOME/emulator
-      export PATH=$PATH:$ANDROID_HOME/platform-tools
 
       # GitHub token for API access (also configures Nix to avoid rate limits)
       if command -v gh &> /dev/null; then
@@ -290,6 +261,15 @@ in
         if [ -n "$GITHUB_TOKEN" ]; then
           export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
         fi
+      fi
+
+      # npm global prefix (Nix's nodejs is read-only)
+      export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+      export PATH="$HOME/.npm-global/bin:$PATH"
+
+      # Auto-install Claude Code via native installer if not present
+      if [ ! -x "$HOME/.local/bin/claude" ]; then
+        curl -fsSL https://claude.ai/install.sh | bash
       fi
     '';
 
@@ -308,13 +288,13 @@ in
       if [ -f ${pkgs.git}/share/bash-completion/completions/git ]; then
         source ${pkgs.git}/share/bash-completion/completions/git
       fi
-      
+
       # Git prompt configuration
       export GIT_PS1_SHOWDIRTYSTATE=true
       export GIT_PS1_SHOWUNTRACKEDFILES=true
       export GIT_PS1_SHOWSTASHSTATE=true
       export GIT_PS1_SHOWUPSTREAM=auto
-      
+
       # Git completion for aliases
       if type __git_complete &>/dev/null; then
         __git_complete g __git_main
@@ -344,13 +324,13 @@ in
         __git_complete gsw _git_switch
         __git_complete gtag _git_tag
       fi
-      
+
       # kubectl completion for alias
       if command -v kubectl &> /dev/null; then
         source <(kubectl completion bash)
         complete -F __start_kubectl k
       fi
-      
+
       # kubectx/kubens completion for aliases
       if command -v kubectx &> /dev/null && [ -f ${pkgs.kubectx}/share/bash-completion/completions/kubectx ]; then
         source ${pkgs.kubectx}/share/bash-completion/completions/kubectx
@@ -360,7 +340,7 @@ in
         source ${pkgs.kubectx}/share/bash-completion/completions/kubens
         complete -F _kube_namespaces kn
       fi
-      
+
       # mise setup
       if command -v mise &> /dev/null; then
         eval "$(mise activate bash)"
@@ -369,7 +349,7 @@ in
       # Krew setup
       if command -v krew &> /dev/null; then
         export PATH="${userHome}/.krew/bin:$PATH"
-        
+
         # Install krew plugins if not already installed
         if [ ! -f "${userHome}/.krew/bin/kubectl-ctx" ]; then
           kubectl krew install ctx 2>/dev/null || true
@@ -582,79 +562,22 @@ in
     };
   };
 
-  home.file.".claude/CLAUDE.md".text = ''
-    # Global Claude Code Settings
-
-    ~/.claude/settings.json and ~/.claude/notify.sh are managed by Nix (Home Manager).
-    They are read-only symlinks and must not be edited directly.
-
-    To change settings:
-    1. Edit ~/ghq/github.com/takuyaa/dotfiles/home.nix
-    2. Run `rebuild`
-
-    Private instructions should be placed in ~/.claude/CLAUDE.local.md (gitignored).
-  '';
-
-  home.file.".claude/notify.sh" = {
-    executable = true;
-    text = ''
-      #!/bin/bash
-      input=$(cat)
-      cwd=$(echo "$input" | jq -r '.cwd')
-      project=$(basename "$cwd")
-      type=$(echo "$input" | jq -r '.notification_type')
-
-      case "$type" in
-        permission_prompt) msg="Waiting for permission"; sound="Ping" ;;
-        idle_prompt)       msg="Waiting for input";      sound="Purr" ;;
-        stop)              msg="Task completed";         sound="Glass" ;;
-        *)                 msg="Notification";           sound="default" ;;
-      esac
-
-      args=(-title "Claude Code" -subtitle "$project" -message "$msg" -sound "$sound")
-      [[ -n "$__CFBundleIdentifier" ]] && args+=(-activate "$__CFBundleIdentifier")
-
-      terminal-notifier "''${args[@]}"
-    '';
-  };
+  programs.home-manager.enable = true;
 
   programs.direnv = {
     enable = true;
-    enableBashIntegration = true;  # This automatically adds direnv hook to bash
+    enableBashIntegration = true;
     nix-direnv.enable = true;
   };
 
   programs.emacs = {
     enable = true;
-    package = pkgs.emacs-nox;  # Terminal-only Emacs without GUI support
+    package = pkgs.emacs-nox;
   };
 
   programs.fzf = {
     enable = true;
     enableBashIntegration = true;
-  };
-
-  programs.ghostty = {
-    enable = true;
-    package = null;  # Installed via Homebrew cask
-    enableBashIntegration = true;
-    settings = {
-      font-family = "PlemolJP Console NF";
-      font-size = 14;
-      theme = "Catppuccin Mocha";
-      cursor-style = "bar";
-      cursor-style-blink = false;
-      window-padding-x = 8;
-      window-padding-y = 8;
-      window-padding-balance = true;
-      window-decoration = false;
-      macos-titlebar-style = "hidden";
-      macos-option-as-alt = true;
-      mouse-hide-while-typing = true;
-      copy-on-select = "clipboard";
-      command = "bash -l -c 'tmux new-session -A -s main'";
-      confirm-close-surface = false;
-    };
   };
 
   programs.git = {
@@ -691,6 +614,7 @@ in
         format = "openpgp";
         openpgp.program = "${pkgs.gnupg}/bin/gpg";
       };
+      credential."https://github.com".helper = "${pkgs.gh}/bin/gh auth git-credential";
     };
   };
 
@@ -701,12 +625,11 @@ in
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
-    pinentry.package = pkgs.pinentry_mac;
   };
 
   programs.starship = {
     enable = true;
-    enableBashIntegration = true;  # This automatically adds starship init to bash
+    enableBashIntegration = true;
     settings = {
       command_timeout = 1000;  # Increase from 500ms default to avoid timeout warnings
     };
@@ -714,12 +637,12 @@ in
 
   programs.tmux = {
     enable = true;
-    baseIndex = 1;              # Start window numbering at 1
-    escapeTime = 0;             # No delay for Escape key
-    historyLimit = 50000;       # Scrollback buffer size
-    keyMode = "emacs";          # Emacs keybindings
-    mouse = true;               # Enable mouse support
-    prefix = "C-t";             # Use Ctrl-t as prefix (Ctrl-b conflicts with Emacs backward-char)
+    baseIndex = 1;
+    escapeTime = 0;
+    historyLimit = 50000;
+    keyMode = "emacs";
+    mouse = true;
+    prefix = "C-t";
     terminal = "tmux-256color";
     extraConfig = ''
       # Pane splitting keybindings

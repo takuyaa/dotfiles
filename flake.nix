@@ -63,12 +63,28 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "backup";
-            home-manager.users.${username} = {config, pkgs, ...}: import ./home.nix {
-              inherit config pkgs username userHome;
+            home-manager.users.${username} = import ./home-darwin.nix;
+            home-manager.extraSpecialArgs = {
+              inherit username userHome;
             };
             nixpkgs.config.allowUnfree = true;
           }
         ];
+      };
+    };
+
+    # Linux standalone home-manager configuration
+    homeConfigurations = {
+      "takuya-a" = home-manager.lib.homeManagerConfiguration {
+        pkgs = import nixpkgs {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
+        extraSpecialArgs = {
+          username = "takuya-a";
+          userHome = "/home/takuya-a";
+        };
+        modules = [ ./home-linux.nix ];
       };
     };
   };
