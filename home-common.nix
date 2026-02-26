@@ -220,7 +220,7 @@ in
         $(git diff --cached --stat --no-color)\
         \
         Detailed changes:\
-        $(git diff --cached --unified=5 --no-color)")"
+        $(git diff --cached --unified=5 --no-color)" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
       '';
       gtag = "git tag";
 
