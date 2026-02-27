@@ -96,6 +96,16 @@ in
     # Custom packages
     linear-tui
 
+    # difit: GitHub-style local diff viewer
+    (writeShellScriptBin "difit" ''
+      exec ${pkgs.nodejs_22}/bin/npx --yes difit "$@"
+    '')
+
+    # playwright-cli: Playwright CLI for coding agents
+    (writeShellScriptBin "playwright-cli" ''
+      exec ${pkgs.nodejs_22}/bin/npx --yes @playwright/cli "$@"
+    '')
+
     # tmux helper: show git branch or basename for window status
     (writeShellScriptBin "tmux-window-info" ''
       path="$1"
