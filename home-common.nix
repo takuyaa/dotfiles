@@ -569,6 +569,10 @@ in
         ask = [];
       };
       language = "japanese";
+      statusLine = {
+        type = "command";
+        command = "bash ~/.claude/statusline-command.sh";
+      };
     };
   };
 
