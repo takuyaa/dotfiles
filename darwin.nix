@@ -45,6 +45,7 @@
     casks = [
       "font-plemol-jp-nf"
       "android-studio"
+      "blackhole-2ch"
       "chatgpt"
       "claude"
       "deepl"
