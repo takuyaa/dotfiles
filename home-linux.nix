@@ -6,6 +6,7 @@
   home.packages = with pkgs; [
     iproute2
     code-server
+    rclone
   ];
 
   # code-server systemd user service
