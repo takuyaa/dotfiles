@@ -33,11 +33,13 @@
     # Homebrew casks managed via official nix-darwin integration
     # All other packages (nix packages) are managed in home.nix
     taps = [
+      "pipedreamhq/pd-cli"
       "satococoa/tap"
     ];
     brews = [
       "mas"
       "pam-reattach"
+      "pipedreamhq/pd-cli/pipedream"
       "satococoa/tap/wtp"
     ];
     casks = [

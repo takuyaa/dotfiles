@@ -33,16 +33,19 @@ in
     buf
     postgresql
     codex
+    cookiecutter
     copier
     fzf
     glow
     livekit
     livekit-cli
     mise
+    prek
     shellcheck
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
     jless
     jq
+    jwt-cli
     tree
     watch
     yq
@@ -92,6 +95,16 @@ in
 
     # Custom packages
     linear-tui
+
+    # difit: GitHub-style local diff viewer
+    (writeShellScriptBin "difit" ''
+      exec ${pkgs.nodejs_22}/bin/npx --yes difit "$@"
+    '')
+
+    # playwright-cli: Playwright CLI for coding agents
+    (writeShellScriptBin "playwright-cli" ''
+      exec ${pkgs.nodejs_22}/bin/npx --yes @playwright/cli "$@"
+    '')
 
     # tmux helper: show git branch or basename for window status
     (writeShellScriptBin "tmux-window-info" ''
@@ -217,7 +230,7 @@ in
         $(git diff --cached --stat --no-color)\
         \
         Detailed changes:\
-        $(git diff --cached --unified=5 --no-color)")"
+        $(git diff --cached --unified=5 --no-color)" | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
       '';
       gtag = "git tag";
 
@@ -627,6 +640,9 @@ in
   programs.starship = {
     enable = true;
     enableBashIntegration = true;
+    settings = {
+      command_timeout = 1000;  # Increase from 500ms default to avoid timeout warnings
+    };
   };
 
   programs.tmux = {
