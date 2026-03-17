@@ -4,9 +4,10 @@
 
   # Linux-specific packages
   home.packages = with pkgs; [
-    iproute2
     code-server
+    iproute2
     rclone
+    terraform
   ];
 
   # code-server systemd user service
