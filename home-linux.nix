@@ -43,6 +43,9 @@
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
 
+  # Allow loopback pinentry for non-TTY environments (e.g. Claude Code)
+  programs.gpg.settings.pinentry-mode = "loopback";
+
   # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
   home.file.".claude/CLAUDE.md".text = ''
     # Global Claude Code Settings

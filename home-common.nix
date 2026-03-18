@@ -635,6 +635,7 @@ in
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    extraConfig = "allow-loopback-pinentry";
   };
 
   programs.starship = {
