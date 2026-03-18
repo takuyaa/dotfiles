@@ -29,17 +29,15 @@ This will install Nix (via Determinate Systems installer), nix-darwin, and apply
 
 ### Linux (dev-01)
 
-#### Prerequisites
-
-- [Nix package manager](https://nixos.org/download/)
-
-#### Bootstrap
+#### Installation
 
 ```bash
 git clone https://github.com/takuyaa/dotfiles.git ~/ghq/github.com/takuyaa/dotfiles
 cd ~/ghq/github.com/takuyaa/dotfiles
-nix run home-manager -- switch -b backup --flake .#takuya-a
+./install-linux.sh
 ```
+
+This will install Nix (via Determinate Systems installer) and apply the Home Manager configuration.
 
 #### Post-Bootstrap
 
@@ -87,6 +85,7 @@ Or use the `rebuild` / `flake-update` shell aliases directly.
 ├── home-linux.nix    # Linux-specific config (imports home-common.nix)
 ├── Makefile          # Platform-aware rebuild/update targets
 ├── install.sh        # macOS bootstrap script
+├── install-linux.sh  # Linux bootstrap script
 ├── LICENSE.txt       # License file
 └── README.md         # This file
 ```
