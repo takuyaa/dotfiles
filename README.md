@@ -22,7 +22,7 @@ Personal development environment configuration using Nix flakes, nix-darwin, and
 ```bash
 git clone https://github.com/takuyaa/dotfiles.git
 cd dotfiles
-./install.sh
+./install-darwin.sh
 ```
 
 This will install Nix (via Determinate Systems installer), nix-darwin, and apply the initial configuration.
@@ -84,7 +84,7 @@ Or use the `rebuild` / `flake-update` shell aliases directly.
 ├── home-darwin.nix   # macOS-specific config (imports home-common.nix)
 ├── home-linux.nix    # Linux-specific config (imports home-common.nix)
 ├── Makefile          # Platform-aware rebuild/update targets
-├── install.sh        # macOS bootstrap script
+├── install-darwin.sh  # macOS bootstrap script
 ├── install-linux.sh  # Linux bootstrap script
 ├── LICENSE.txt       # License file
 └── README.md         # This file
