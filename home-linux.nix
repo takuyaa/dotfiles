@@ -43,6 +43,14 @@
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
 
+  # keychain: reuses ssh-agent across login sessions
+  # Passphrase is only needed once per machine reboot
+  programs.keychain = {
+    enable = true;
+    keys = [ "id_ed25519" ];
+    enableBashIntegration = true;
+  };
+
   # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
   home.file.".claude/CLAUDE.md".text = ''
     # Global Claude Code Settings

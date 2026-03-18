@@ -634,7 +634,7 @@ in
 
   services.gpg-agent = {
     enable = true;
-    enableSshSupport = true;
+    enableSshSupport = false;
   };
 
   programs.starship = {
