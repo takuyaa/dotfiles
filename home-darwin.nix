@@ -57,6 +57,9 @@
     };
   };
 
+  # SSH: use macOS Keychain for passphrase storage
+  programs.ssh.matchBlocks."*".extraOptions.UseKeychain = "yes";
+
   # gpg-agent pinentry (macOS)
   services.gpg-agent.pinentry.package = pkgs.pinentry_mac;
 

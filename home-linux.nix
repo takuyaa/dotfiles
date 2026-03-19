@@ -6,6 +6,7 @@
   home.packages = with pkgs; [
     code-server
     iproute2
+    keychain
     rclone
     terraform
   ];
@@ -30,12 +31,28 @@
   programs.bash.shellAliases.rebuild =
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
-  # Auto-install Happy CLI via npm global if not present
   programs.bash.profileExtra = lib.mkAfter ''
+    # Start ssh-agent via keychain (reuses existing agent across shells)
+    eval "$(keychain --eval --quiet id_ed25519)"
+
+    # Auto-install Happy CLI via npm global if not present
     if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
       npm install -g happy-coder
     fi
   '';
+
+  # SSH host settings
+  programs.ssh.matchBlocks = {
+    "dev-01" = {
+      hostname = "10.0.2.99";
+      user = "takuya-a";
+      identityFile = "~/.ssh/id_ed25519";
+    };
+    "10.0.*.*" = {
+      user = "ubuntu";
+      identityFile = "~/.ssh/id_ed25519";
+    };
+  };
 
   # GPG signing key (dev-01 specific)
   programs.git.signing.key = lib.mkForce "F20538F59AADFFF0";
@@ -50,6 +67,9 @@
     keys = [ "id_ed25519" ];
     enableBashIntegration = true;
   };
+
+  # Allow loopback pinentry for non-TTY environments (e.g. Claude Code)
+  programs.gpg.settings.pinentry-mode = "loopback";
 
   # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
   home.file.".claude/CLAUDE.md".text = ''
