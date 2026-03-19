@@ -35,6 +35,11 @@
     # Start ssh-agent via keychain (reuses existing agent across shells)
     eval "$(keychain --eval --quiet id_ed25519)"
 
+    # Prompt for GPG passphrase if not cached (e.g. after reboot)
+    if ! gpg-connect-agent 'keyinfo --list' /bye 2>/dev/null | grep -q '1 P'; then
+      echo "[GPG] Passphrase not cached. Run:  echo test | gpg -s > /dev/null"
+    fi
+
     # Auto-install Happy CLI via npm global if not present
     if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
       npm install -g happy-coder
