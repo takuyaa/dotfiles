@@ -37,10 +37,8 @@
       . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     fi
 
-    # Start ssh-agent via keychain (only when local key exists; skip for agent forwarding)
-    if [ -f "$HOME/.ssh/id_ed25519" ]; then
-      eval "$(keychain --eval --quiet id_ed25519)"
-    fi
+    # Start ssh-agent via keychain (reuses existing agent across shells)
+    eval "$(keychain --eval --quiet id_ed25519)"
 
     # Prompt for GPG passphrase if not cached (e.g. after reboot)
     if ! gpg-connect-agent 'keyinfo --list' /bye 2>/dev/null | grep -q '1 P'; then
@@ -59,7 +57,6 @@
       hostname = "100.120.98.107";
       user = "takuya-a";
       identityFile = "~/.ssh/id_ed25519";
-      forwardAgent = true;
     };
     "10.0.*.*" = {
       user = "ubuntu";
