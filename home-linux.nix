@@ -57,6 +57,7 @@
       hostname = "100.120.98.107";
       user = "takuya-a";
       identityFile = "~/.ssh/id_ed25519";
+      forwardAgent = true;
     };
     "10.0.*.*" = {
       user = "ubuntu";
