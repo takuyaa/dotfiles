@@ -32,6 +32,11 @@
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
   programs.bash.profileExtra = lib.mkAfter ''
+    # Source Nix profile (single-user install; HM overwrites .profile so this must be explicit)
+    if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+      . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+    fi
+
     # Start ssh-agent via keychain (reuses existing agent across shells)
     eval "$(keychain --eval --quiet id_ed25519)"
 
