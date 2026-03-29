@@ -48,8 +48,8 @@
 
   # SSH host settings
   programs.ssh.matchBlocks = {
-    "dev-01" = {
-      hostname = "10.0.2.99";
+    "dev" = {
+      hostname = "100.120.98.107";
       user = "takuya-a";
       identityFile = "~/.ssh/id_ed25519";
     };
