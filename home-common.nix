@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, ... }:
+{ config, pkgs, lib, username, userHome, codex-pkg, gws-pkg, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -32,8 +32,9 @@ in
     # Development tools
     buf
     postgresql
-    codex
+    codex-pkg
     cookiecutter
+    gws-pkg
     copier
     fzf
     glow
@@ -621,7 +622,7 @@ in
       };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
-      pull.rebase = false;
+      pull.ff = "only";
       core.editor = "emacs";
       tag.gpgSign = true;
       gpg = {

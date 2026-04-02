@@ -58,6 +58,7 @@
       "rectangle"
       "slack"
       "spotify"
+      "tailscale"
       "visual-studio-code"
     ];
     
