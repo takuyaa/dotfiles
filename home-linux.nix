@@ -4,8 +4,11 @@
 
   # Linux-specific packages
   home.packages = with pkgs; [
-    iproute2
     code-server
+    iproute2
+    keychain
+    rclone
+    terraform
   ];
 
   # code-server systemd user service
@@ -28,18 +31,55 @@
   programs.bash.shellAliases.rebuild =
     "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
 
-  # Auto-install Happy CLI via npm global if not present
   programs.bash.profileExtra = lib.mkAfter ''
+    # Source Nix profile (single-user install; HM overwrites .profile so this must be explicit)
+    if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+      . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+    fi
+
+    # Start ssh-agent via keychain (reuses existing agent across shells)
+    eval "$(keychain --eval --quiet id_ed25519)"
+
+    # Prompt for GPG passphrase if not cached (e.g. after reboot)
+    if ! gpg-connect-agent 'keyinfo --list' /bye 2>/dev/null | grep -q '1 P'; then
+      echo "[GPG] Passphrase not cached. Run:  echo test | gpg -s > /dev/null"
+    fi
+
+    # Auto-install Happy CLI via npm global if not present
     if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
       npm install -g happy-coder
     fi
   '';
+
+  # SSH host settings
+  programs.ssh.matchBlocks = {
+    "dev" = {
+      hostname = "100.120.98.107";
+      user = "takuya-a";
+      identityFile = "~/.ssh/id_ed25519";
+    };
+    "10.0.*.*" = {
+      user = "ubuntu";
+      identityFile = "~/.ssh/id_ed25519";
+    };
+  };
 
   # GPG signing key (dev-01 specific)
   programs.git.signing.key = lib.mkForce "F20538F59AADFFF0";
 
   # gpg-agent pinentry (headless server)
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
+
+  # keychain: reuses ssh-agent across login sessions
+  # Passphrase is only needed once per machine reboot
+  programs.keychain = {
+    enable = true;
+    keys = [ "id_ed25519" ];
+    enableBashIntegration = true;
+  };
+
+  # Allow loopback pinentry for non-TTY environments (e.g. Claude Code)
+  programs.gpg.settings.pinentry-mode = "loopback";
 
   # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
   home.file.".claude/CLAUDE.md".text = ''

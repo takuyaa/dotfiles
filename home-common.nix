@@ -636,9 +636,25 @@ in
     enable = true;
   };
 
+  programs.ssh = {
+    enable = true;
+    enableDefaultConfig = false;
+    matchBlocks."*" = {
+      extraOptions = {
+        AddKeysToAgent = "yes";
+        SendEnv = "LANG LC_*";
+        Ciphers = "+aes256-cbc";
+        VisualHostKey = "yes";
+      };
+    };
+  };
+
   services.gpg-agent = {
     enable = true;
-    enableSshSupport = true;
+    enableSshSupport = false;
+    defaultCacheTtl = 34560000;
+    maxCacheTtl = 34560000;
+    extraConfig = "allow-loopback-pinentry";
   };
 
   programs.starship = {
