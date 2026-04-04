@@ -37,9 +37,6 @@
       . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     fi
 
-    # Start ssh-agent via keychain (reuses existing agent across shells)
-    eval "$(keychain --eval --quiet id_ed25519)"
-
     # Prompt for GPG passphrase if not cached (e.g. after reboot)
     if ! gpg-connect-agent 'keyinfo --list' /bye 2>/dev/null | grep -q '1 P'; then
       echo "[GPG] Passphrase not cached. Run:  echo test | gpg -s > /dev/null"
@@ -71,10 +68,11 @@
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
 
   # keychain: reuses ssh-agent across login sessions
-  # Passphrase is only needed once per machine reboot
+  # --noask: skip passphrase prompt if key is not cached (use agent forwarding instead)
   programs.keychain = {
     enable = true;
     keys = [ "id_ed25519" ];
+    extraFlags = [ "--noask" ];
     enableBashIntegration = true;
   };
 
