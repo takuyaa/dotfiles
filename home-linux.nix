@@ -68,11 +68,10 @@
   services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
 
   # keychain: reuses ssh-agent across login sessions
-  # --noask: skip passphrase prompt if key is not cached (use agent forwarding instead)
+  # Passphrase is only needed once per machine reboot
   programs.keychain = {
     enable = true;
     keys = [ "id_ed25519" ];
-    extraFlags = [ "--noask" ];
     enableBashIntegration = true;
   };
 
