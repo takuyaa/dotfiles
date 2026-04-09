@@ -451,7 +451,7 @@ in
 
   home.file.".claude/settings.json" = {
     text = builtins.toJSON {
-      reasoningEffort = "high";
+      effortLevel = "high";
       alwaysThinkingEnabled = true;
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
