@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, codex-pkg, gws-pkg, ... }:
+{ config, pkgs, lib, username, userHome, codex-pkg, gws-pkg, worktrunk-pkg, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -65,6 +65,7 @@ in
     ghq
     git-lfs
     lazygit
+    worktrunk-pkg
 
     # System tool alternatives
     bat

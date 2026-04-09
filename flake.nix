@@ -42,6 +42,11 @@
       url = "github:googleworkspace/cli";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    worktrunk = {
+      url = "github:max-sixty/worktrunk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -55,6 +60,7 @@
     homebrew-bundle,
     codex,
     gws,
+    worktrunk,
   }: let
     system = "aarch64-darwin"; # For Apple Silicon Macs (use "x86_64-darwin" for Intel Macs)
     username = "takuya.asano";
@@ -80,6 +86,7 @@
               inherit username userHome;
               codex-pkg = codex.packages.${system}.default;
               gws-pkg = gws.packages.${system}.default;
+              worktrunk-pkg = worktrunk.packages.${system}.default;
             };
             nixpkgs.config.allowUnfree = true;
           }
@@ -99,6 +106,7 @@
           userHome = "/home/takuya-a";
           codex-pkg = codex.packages."x86_64-linux".default;
           gws-pkg = gws.packages."x86_64-linux".default;
+          worktrunk-pkg = worktrunk.packages."x86_64-linux".default;
         };
         modules = [ ./home-linux.nix ];
       };
