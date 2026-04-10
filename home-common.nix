@@ -353,6 +353,9 @@ in
         complete -F _kube_namespaces kn
       fi
 
+      # worktrunk shell integration & completions
+      if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init bash)"; fi
+
       # mise setup
       if command -v mise &> /dev/null; then
         eval "$(mise activate bash)"
