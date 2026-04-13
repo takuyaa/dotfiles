@@ -620,6 +620,9 @@ in
       # Playwright MCP
       ".playwright-mcp/"
     ];
+    includes = [
+      { path = "~/.config/git/config.local"; }
+    ];
     settings = {
       user = {
         name = "Takuya Asano";
