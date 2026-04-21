@@ -33,11 +33,6 @@
       flake = false;
     };
 
-    codex = {
-      url = "github:openai/codex/rust-v0.106.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     gws = {
       url = "github:googleworkspace/cli";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -58,7 +53,6 @@
     homebrew-core,
     homebrew-cask,
     homebrew-bundle,
-    codex,
     gws,
     worktrunk,
   }: let
@@ -84,7 +78,6 @@
             home-manager.users.${username} = import ./home-darwin.nix;
             home-manager.extraSpecialArgs = {
               inherit username userHome;
-              codex-pkg = codex.packages.${system}.default;
               gws-pkg = gws.packages.${system}.default;
               worktrunk-pkg = worktrunk.packages.${system}.default;
             };
@@ -104,7 +97,6 @@
         extraSpecialArgs = {
           username = "takuya-a";
           userHome = "/home/takuya-a";
-          codex-pkg = codex.packages."x86_64-linux".default;
           gws-pkg = gws.packages."x86_64-linux".default;
           worktrunk-pkg = worktrunk.packages."x86_64-linux".default;
         };

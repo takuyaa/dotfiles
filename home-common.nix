@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, codex-pkg, gws-pkg, worktrunk-pkg, ... }:
+{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -32,7 +32,6 @@ in
     # Development tools
     buf
     postgresql
-    codex-pkg
     cookiecutter
     gws-pkg
     copier
@@ -282,6 +281,11 @@ in
       # Auto-install Claude Code via native installer if not present
       if [ ! -x "$HOME/.local/bin/claude" ]; then
         curl -fsSL https://claude.ai/install.sh | bash
+      fi
+
+      # Auto-install Codex CLI via npm if not present
+      if [ ! -x "$HOME/.npm-global/bin/codex" ]; then
+        npm install -g @openai/codex
       fi
     '';
 

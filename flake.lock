@@ -17,28 +17,6 @@
         "type": "github"
       }
     },
-    "codex": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "rust-overlay": "rust-overlay"
-      },
-      "locked": {
-        "lastModified": 1772134781,
-        "narHash": "sha256-1p0NxOQEEDwVuQcO1VhDmLXxnRMILpYF28t65Iunc6U=",
-        "owner": "openai",
-        "repo": "codex",
-        "rev": "ffd726a656403b69b75130025587d5e0a0d6b7d1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "openai",
-        "ref": "rust-v0.106.0",
-        "repo": "codex",
-        "type": "github"
-      }
-    },
     "crane": {
       "locked": {
         "lastModified": 1767744144,
@@ -235,7 +213,6 @@
     },
     "root": {
       "inputs": {
-        "codex": "codex",
         "gws": "gws",
         "home-manager": "home-manager",
         "homebrew-bundle": "homebrew-bundle",
@@ -248,27 +225,6 @@
       }
     },
     "rust-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "codex",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1769828398,
-        "narHash": "sha256-zmnvRUm15QrlKH0V1BZoiT3U+Q+tr+P5Osi8qgtL9fY=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "a1d32c90c8a4ea43e9586b7e5894c179d5747425",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "rust-overlay_2": {
       "inputs": {
         "nixpkgs": [
           "worktrunk",
@@ -326,7 +282,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay_2"
+        "rust-overlay": "rust-overlay"
       },
       "locked": {
         "lastModified": 1775716754,
