@@ -287,6 +287,9 @@ in
       if [ ! -x "$HOME/.npm-global/bin/codex" ]; then
         npm install -g @openai/codex
       fi
+
+      # Load SSH keys from macOS Keychain into ssh-agent (for SSH commit signing)
+      ssh-add --apple-load-keychain 2>/dev/null || true
     '';
 
     initExtra = ''
@@ -455,6 +458,10 @@ in
     "nix/nix.conf".text = ''
       experimental-features = nix-command flakes
     '';
+    "git/allowed_signers".text = ''
+      takuya.a@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
+      takuya.asano@legalontech.jp ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
+    '';
   };
 
   home.file.".claude/settings.json" = {
@@ -579,6 +586,14 @@ in
         ask = [];
       };
       language = "japanese";
+      sandbox = {
+        enabled = true;
+        allowUnsandboxedCommands = false;
+        enableWeakerNetworkIsolation = true;
+        network = {
+          allowAllUnixSockets = true;
+        };
+      };
       statusLine = {
         type = "command";
         command = "bash ~/.claude/statusline-command.sh";
@@ -607,7 +622,8 @@ in
   programs.git = {
     enable = true;
     signing = {
-      key = "95A468733FD3BFA52C2D99805E243D42C1E76500";
+      format = "ssh";
+      key = "${userHome}/.ssh/id_ed25519.pub";
       signByDefault = true;
     };
     ignores = [
@@ -636,17 +652,9 @@ in
       push.autoSetupRemote = true;
       pull.ff = "only";
       core.editor = "emacs";
-      tag.gpgSign = true;
-      gpg = {
-        format = "openpgp";
-        openpgp.program = "${pkgs.gnupg}/bin/gpg";
-      };
+      gpg.ssh.allowedSignersFile = "${userHome}/.config/git/allowed_signers";
       credential."https://github.com".helper = "${pkgs.gh}/bin/gh auth git-credential";
     };
-  };
-
-  programs.gpg = {
-    enable = true;
   };
 
   programs.ssh = {
@@ -655,19 +663,12 @@ in
     matchBlocks."*" = {
       extraOptions = {
         AddKeysToAgent = "yes";
+        UseKeychain = "yes";
         SendEnv = "LANG LC_*";
         Ciphers = "+aes256-cbc";
         VisualHostKey = "yes";
       };
     };
-  };
-
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = false;
-    defaultCacheTtl = 34560000;
-    maxCacheTtl = 34560000;
-    extraConfig = "allow-loopback-pinentry";
   };
 
   programs.starship = {
@@ -692,9 +693,10 @@ in
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
 
-      # Auto-balance panes on split/exit: even-horizontal for <=3 panes, tiled for 4+
+      # Auto-balance panes on split/kill/exit: even-horizontal for <=3 panes, tiled for 4+
       set-hook -g after-split-window "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
-      set-hook -g pane-exited "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      set-hook -g after-kill-pane    "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      set-hook -g pane-exited        "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
 
       # Emacs-style pane navigation
       bind C-p select-pane -U
