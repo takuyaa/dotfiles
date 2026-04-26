@@ -21,6 +21,30 @@ let
       mainProgram = "linear-tui";
     };
   };
+
+  leetgo = pkgs.buildGoModule {
+    pname = "leetgo";
+    version = "1.4.17";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "j178";
+      repo = "leetgo";
+      rev = "v1.4.17";
+      hash = "sha256-FxXU1A9pnVMzD0fTo2QgZvZYC40UwHlJja69WCCXD0k=";
+    };
+
+    vendorHash = "sha256-ODSzzEj7r8itbsEeXutLyXxGZ/7q7BZbGQ1kRN4RSfc=";
+
+    subPackages = [ "." ];
+    ldflags = [ "-s" "-w" "-X" "github.com/j178/leetgo/constants.Version=1.4.17" ];
+
+    meta = with pkgs.lib; {
+      description = "Better LeetCode CLI for geeks";
+      homepage = "https://github.com/j178/leetgo";
+      license = licenses.mit;
+      mainProgram = "leetgo";
+    };
+  };
 in
 {
   home.username = username;
@@ -94,6 +118,7 @@ in
     stern
 
     # Custom packages
+    leetgo
     linear-tui
 
     # difit: GitHub-style local diff viewer
