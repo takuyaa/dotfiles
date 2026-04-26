@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, ... }:
+{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -56,8 +56,8 @@ in
     # Development tools
     buf
     postgresql
-    codex
     cookiecutter
+    gws-pkg
     copier
     fzf
     glow
@@ -89,6 +89,7 @@ in
     ghq
     git-lfs
     lazygit
+    worktrunk-pkg
 
     # System tool alternatives
     bat
@@ -307,6 +308,14 @@ in
       if [ ! -x "$HOME/.local/bin/claude" ]; then
         curl -fsSL https://claude.ai/install.sh | bash
       fi
+
+      # Auto-install Codex CLI via npm if not present
+      if [ ! -x "$HOME/.npm-global/bin/codex" ]; then
+        npm install -g @openai/codex
+      fi
+
+      # Load SSH keys from macOS Keychain into ssh-agent (for SSH commit signing)
+      ssh-add --apple-load-keychain 2>/dev/null || true
     '';
 
     initExtra = ''
@@ -376,6 +385,9 @@ in
         source ${pkgs.kubectx}/share/bash-completion/completions/kubens
         complete -F _kube_namespaces kn
       fi
+
+      # worktrunk shell integration & completions
+      if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init bash)"; fi
 
       # mise setup
       if command -v mise &> /dev/null; then
@@ -472,10 +484,15 @@ in
     "nix/nix.conf".text = ''
       experimental-features = nix-command flakes
     '';
+    "git/allowed_signers".text = ''
+      takuya.a@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
+      takuya.asano@legalontech.jp ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
+    '';
   };
 
   home.file.".claude/settings.json" = {
     text = builtins.toJSON {
+      effortLevel = "high";
       alwaysThinkingEnabled = true;
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
@@ -595,6 +612,18 @@ in
         ask = [];
       };
       language = "japanese";
+      sandbox = {
+        enabled = true;
+        allowUnsandboxedCommands = false;
+        enableWeakerNetworkIsolation = true;
+        network = {
+          allowAllUnixSockets = true;
+        };
+      };
+      statusLine = {
+        type = "command";
+        command = "bash ~/.claude/statusline-command.sh";
+      };
     };
   };
 
@@ -619,7 +648,8 @@ in
   programs.git = {
     enable = true;
     signing = {
-      key = "95A468733FD3BFA52C2D99805E243D42C1E76500";
+      format = "ssh";
+      key = "${userHome}/.ssh/id_ed25519.pub";
       signByDefault = true;
     };
     ignores = [
@@ -636,6 +666,9 @@ in
       # Playwright MCP
       ".playwright-mcp/"
     ];
+    includes = [
+      { path = "~/.config/git/config.local"; }
+    ];
     settings = {
       user = {
         name = "Takuya Asano";
@@ -643,19 +676,11 @@ in
       };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
-      pull.rebase = false;
+      pull.ff = "only";
       core.editor = "emacs";
-      tag.gpgSign = true;
-      gpg = {
-        format = "openpgp";
-        openpgp.program = "${pkgs.gnupg}/bin/gpg";
-      };
+      gpg.ssh.allowedSignersFile = "${userHome}/.config/git/allowed_signers";
       credential."https://github.com".helper = "${pkgs.gh}/bin/gh auth git-credential";
     };
-  };
-
-  programs.gpg = {
-    enable = true;
   };
 
   programs.ssh = {
@@ -664,19 +689,12 @@ in
     matchBlocks."*" = {
       extraOptions = {
         AddKeysToAgent = "yes";
+        UseKeychain = "yes";
         SendEnv = "LANG LC_*";
         Ciphers = "+aes256-cbc";
         VisualHostKey = "yes";
       };
     };
-  };
-
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = false;
-    defaultCacheTtl = 34560000;
-    maxCacheTtl = 34560000;
-    extraConfig = "allow-loopback-pinentry";
   };
 
   programs.starship = {
@@ -700,6 +718,11 @@ in
       # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
+
+      # Auto-balance panes on split/kill/exit: even-horizontal for <=3 panes, tiled for 4+
+      set-hook -g after-split-window "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      set-hook -g after-kill-pane    "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      set-hook -g pane-exited        "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
 
       # Emacs-style pane navigation
       bind C-p select-pane -U

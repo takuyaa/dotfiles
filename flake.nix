@@ -32,6 +32,16 @@
       url = "github:homebrew/homebrew-bundle";
       flake = false;
     };
+
+    gws = {
+      url = "github:googleworkspace/cli";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    worktrunk = {
+      url = "github:max-sixty/worktrunk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -43,6 +53,8 @@
     homebrew-core,
     homebrew-cask,
     homebrew-bundle,
+    gws,
+    worktrunk,
   }: let
     system = "aarch64-darwin"; # For Apple Silicon Macs (use "x86_64-darwin" for Intel Macs)
     username = "takuya.asano";
@@ -66,6 +78,8 @@
             home-manager.users.${username} = import ./home-darwin.nix;
             home-manager.extraSpecialArgs = {
               inherit username userHome;
+              gws-pkg = gws.packages.${system}.default;
+              worktrunk-pkg = worktrunk.packages.${system}.default;
             };
             nixpkgs.config.allowUnfree = true;
           }
@@ -83,6 +97,8 @@
         extraSpecialArgs = {
           username = "takuya-a";
           userHome = "/home/takuya-a";
+          gws-pkg = gws.packages."x86_64-linux".default;
+          worktrunk-pkg = worktrunk.packages."x86_64-linux".default;
         };
         modules = [ ./home-linux.nix ];
       };
