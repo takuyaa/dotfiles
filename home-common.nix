@@ -485,8 +485,8 @@ in
       experimental-features = nix-command flakes
     '';
     "git/allowed_signers".text = ''
-      takuya.a@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
-      takuya.asano@legalontech.jp ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeMLXdefwe33sb2cKYJb1VB4GirIlb+B8HY5AK8kWGC
+      takuya.a@gmail.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHUUYK9l21+ujAg7PUQ//XNSVeN9xJ255HkBIyfWkBw4
+      takuya.asano@legalontech.jp ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHUUYK9l21+ujAg7PUQ//XNSVeN9xJ255HkBIyfWkBw4
     '';
   };
 
