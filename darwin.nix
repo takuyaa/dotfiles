@@ -48,6 +48,7 @@
       "blackhole-2ch"
       "chatgpt"
       "claude"
+      "codex-app"
       "deepl"
       "ghostty"
       "karabiner-elements"
