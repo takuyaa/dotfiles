@@ -55,6 +55,7 @@ in
   home.packages = with pkgs; [
     # Development tools
     buf
+    codex
     postgresql
     cookiecutter
     gws-pkg
@@ -307,11 +308,6 @@ in
       # Auto-install Claude Code via native installer if not present
       if [ ! -x "$HOME/.local/bin/claude" ]; then
         curl -fsSL https://claude.ai/install.sh | bash
-      fi
-
-      # Auto-install Codex CLI via npm if not present
-      if [ ! -x "$HOME/.npm-global/bin/codex" ]; then
-        npm install -g @openai/codex
       fi
 
       # Load SSH keys from macOS Keychain into ssh-agent (for SSH commit signing)
