@@ -27,9 +27,9 @@
     };
   };
 
-  # rebuild alias (Linux uses standalone home-manager)
-  programs.bash.shellAliases.rebuild =
-    "home-manager switch -b backup --flake ~/ghq/github.com/takuyaa/dotfiles#takuya-a";
+  # rebuild/update aliases (delegate to Makefile so the source of truth is one place)
+  programs.bash.shellAliases.rebuild = "make -C ~/ghq/github.com/takuyaa/dotfiles rebuild";
+  programs.bash.shellAliases.update = "make -C ~/ghq/github.com/takuyaa/dotfiles update";
 
   programs.bash.profileExtra = lib.mkAfter ''
     # Source Nix profile (single-user install; HM overwrites .profile so this must be explicit)

@@ -9,8 +9,9 @@
     cocoapods
   ];
 
-  # rebuild alias (macOS uses darwin-rebuild)
-  programs.bash.shellAliases.rebuild = "sudo darwin-rebuild switch --flake .#macos";
+  # rebuild/update aliases (delegate to Makefile so the source of truth is one place)
+  programs.bash.shellAliases.rebuild = "make -C ~/ghq/github.com/takuyaa/dotfiles rebuild";
+  programs.bash.shellAliases.update = "make -C ~/ghq/github.com/takuyaa/dotfiles update";
 
   # macOS-specific profileExtra (appended after common profileExtra)
   programs.bash.profileExtra = lib.mkAfter ''
