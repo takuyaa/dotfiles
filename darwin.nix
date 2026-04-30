@@ -58,13 +58,9 @@
       "rectangle"
       "slack"
       "spotify"
-      "tailscale"
+      "tailscale-app"
       "visual-studio-code"
     ];
-    
-    masApps = {
-      "Kindle" = 302584613;
-    };
   };
 
   # Shell configuration
