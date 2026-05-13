@@ -715,10 +715,9 @@ in
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
 
-      # Auto-balance panes on split/kill/exit: even-horizontal for <=3 panes, tiled for 4+
+      # Auto-balance panes on split/kill: even-horizontal for <=3 panes, tiled for 4+
       set-hook -g after-split-window "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
       set-hook -g after-kill-pane    "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
-      set-hook -g pane-exited        "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
 
       # Emacs-style pane navigation
       bind C-p select-pane -U
