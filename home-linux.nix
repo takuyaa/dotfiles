@@ -4,10 +4,12 @@
 
   # Linux-specific packages
   home.packages = with pkgs; [
+    bubblewrap   # bwrap: required by Claude Code sandbox
     code-server
     iproute2
     keychain
     rclone
+    socat        # required by Claude Code sandbox
     terraform
   ];
 
