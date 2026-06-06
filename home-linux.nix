@@ -4,6 +4,10 @@
 
   # Linux-specific packages
   home.packages = with pkgs; [
+    # build-essential equivalent (C/C++ toolchain)
+    binutils
+    gcc
+    gnumake
     code-server
     iproute2
     keychain
