@@ -519,6 +519,7 @@ in
         }];
       };
       permissions = {
+        defaultMode = "auto";
         allow = [
           "Bash(basename:*)"
           "Bash(cal:*)"
@@ -609,7 +610,7 @@ in
       };
       language = "japanese";
       sandbox = {
-        enabled = true;
+        enabled = pkgs.stdenv.isDarwin;  # bwrap unusable in unprivileged k8s pod
         allowUnsandboxedCommands = false;
         enableWeakerNetworkIsolation = true;
         network = {
