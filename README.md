@@ -47,15 +47,19 @@ Authenticate with GitHub:
 gh auth login
 ```
 
-Generate a GPG signing key and register it on [GitHub](https://github.com/settings/gpg/new):
+Commits are signed with your SSH key (`~/.ssh/id_ed25519`). Register the
+**public** key as a *Signing Key* on
+[GitHub](https://github.com/settings/ssh/new) (key type: "Signing Key"):
 
 ```bash
-gpg --full-generate-key          # Choose ECC (option 9)
-gpg --list-secret-keys --keyid-format=long  # Note the key ID
-gpg --armor --export <KEY_ID>    # Copy to GitHub
+cat ~/.ssh/id_ed25519.pub    # Copy to GitHub
 ```
 
-Then update `home-linux.nix` with the new key ID and `rebuild`.
+If the key does not exist yet, generate it first:
+
+```bash
+ssh-keygen -t ed25519 -C "takuya.a@gmail.com"
+```
 
 ## Daily Usage
 

@@ -41,11 +41,6 @@
       . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     fi
 
-    # Prompt for GPG passphrase if not cached (e.g. after reboot)
-    if ! gpg-connect-agent 'keyinfo --list' /bye 2>/dev/null | grep -q '1 P'; then
-      echo "[GPG] Passphrase not cached. Run:  echo test | gpg -s > /dev/null"
-    fi
-
     # Auto-install Happy CLI via npm global if not present
     if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
       npm install -g happy-coder
@@ -65,9 +60,6 @@
     };
   };
 
-  # gpg-agent pinentry (headless server)
-  services.gpg-agent.pinentry.package = pkgs.pinentry-curses;
-
   # keychain: reuses ssh-agent across login sessions
   # Passphrase is only needed once per machine reboot
   programs.keychain = {
@@ -75,9 +67,6 @@
     keys = [ "id_ed25519" ];
     enableBashIntegration = true;
   };
-
-  # Allow loopback pinentry for non-TTY environments (e.g. Claude Code)
-  programs.gpg.settings.pinentry-mode = "loopback";
 
   # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
   home.file.".claude/CLAUDE.md".text = ''

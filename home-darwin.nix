@@ -61,9 +61,6 @@
   # SSH: use macOS Keychain for passphrase storage
   programs.ssh.matchBlocks."*".extraOptions.UseKeychain = "yes";
 
-  # gpg-agent pinentry (macOS)
-  services.gpg-agent.pinentry.package = pkgs.pinentry_mac;
-
   # Claude statusline script
   home.file.".claude/statusline-command.sh" = {
     executable = true;
