@@ -59,7 +59,7 @@
   };
 
   # SSH: use macOS Keychain for passphrase storage
-  programs.ssh.matchBlocks."*".extraOptions.UseKeychain = "yes";
+  programs.ssh.settings."*".UseKeychain = "yes";
 
   # Claude statusline script
   home.file.".claude/statusline-command.sh" = {

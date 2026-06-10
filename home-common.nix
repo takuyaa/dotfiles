@@ -45,6 +45,15 @@ let
       mainProgram = "leetgo";
     };
   };
+
+  # nixpkgs の livekit-cli は src ハッシュが古く（v2.16.4 の上流コンテンツが
+  # 貼り直され実体が変わったため）FOD のハッシュ不整合でビルドできない。
+  # 実体の正しいハッシュに上書きする。nixpkgs 側が修正されたらこの override は削除可。
+  livekit-cli = pkgs.livekit-cli.overrideAttrs (old: {
+    src = old.src.overrideAttrs (_: {
+      outputHash = "sha256-037Llh88/OsmhCXdJj5QQ+qMo5e+/d2HMdJx4HwiTrw=";
+    });
+  });
 in
 {
   home.username = username;
@@ -612,14 +621,12 @@ in
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks."*" = {
-      extraOptions = {
-        AddKeysToAgent = "yes";
-        UseKeychain = "yes";
-        SendEnv = "LANG LC_*";
-        Ciphers = "+aes256-cbc";
-        VisualHostKey = "yes";
-      };
+    settings."*" = {
+      AddKeysToAgent = "yes";
+      UseKeychain = "yes";
+      SendEnv = "LANG LC_*";
+      Ciphers = "+aes256-cbc";
+      VisualHostKey = "yes";
     };
   };
 
@@ -645,15 +652,25 @@ in
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
 
-      # Auto-balance panes on split/kill: even-horizontal for <=3 panes, tiled for 4+
+      # Auto-balance panes on split/close: even-horizontal for <=3 panes, tiled for 4+
+      # NOTE: after-kill-pane does not fire in tmux (the pane/context is destroyed),
+      # so use pane-exited, which fires after a pane closes with the post-removal count.
       set-hook -g after-split-window "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
-      set-hook -g after-kill-pane    "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      set-hook -g pane-exited        "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
 
-      # Emacs-style pane navigation
-      bind C-p select-pane -U
-      bind C-n select-pane -D
-      bind C-b select-pane -L
-      bind C-f select-pane -R
+      # Cyclic pane navigation: next/prev pane (repeatable)
+      bind -r C-n select-pane -t :.+
+      bind -r C-p select-pane -t :.-
+
+      # Directional pane navigation: tap arrows after C-t to move repeatedly
+      # (bare arrows, so C-arrow keeps tmux's default 1-cell resize-pane)
+      bind -r Up    select-pane -U
+      bind -r Down  select-pane -D
+      bind -r Left  select-pane -L
+      bind -r Right select-pane -R
+
+      # Give repeatable binds a bit more time for comfortable chained moves
+      set -g repeat-time 600
 
       # Pane resizing
       bind -r M-Up resize-pane -U 5
