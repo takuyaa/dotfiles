@@ -302,6 +302,11 @@ in
       # Enable color output for less
       export LESS="-R"
 
+      # Claude Code: use fullscreen (alternate-screen) rendering to avoid
+      # output garbling on pane resize/scrollback under tmux, and enable
+      # in-app scrolling (PgUp/PgDn, Ctrl+Home/End, mouse wheel).
+      export CLAUDE_CODE_NO_FLICKER=1
+
       # GitHub token for API access (also configures Nix to avoid rate limits)
       if command -v gh &> /dev/null; then
         GITHUB_TOKEN=$(gh auth token 2>/dev/null) && export GITHUB_TOKEN
@@ -648,6 +653,13 @@ in
     prefix = "C-t";
     terminal = "tmux-256color";
     extraConfig = ''
+      # Claude Code compatibility (https://code.claude.com/docs/en/terminal-config)
+      # - allow-passthrough: let notifications/progress reach the outer terminal
+      # - extended-keys: distinguish Shift+Enter from plain Enter
+      set -g allow-passthrough on
+      set -s extended-keys on
+      set -as terminal-features 'xterm*:extkeys'
+
       # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
