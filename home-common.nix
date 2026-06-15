@@ -302,11 +302,6 @@ in
       # Enable color output for less
       export LESS="-R"
 
-      # Claude Code: use fullscreen (alternate-screen) rendering to avoid
-      # output garbling on pane resize/scrollback under tmux, and enable
-      # in-app scrolling (PgUp/PgDn, Ctrl+Home/End, mouse wheel).
-      export CLAUDE_CODE_NO_FLICKER=1
-
       # GitHub token for API access (also configures Nix to avoid rate limits)
       if command -v gh &> /dev/null; then
         GITHUB_TOKEN=$(gh auth token 2>/dev/null) && export GITHUB_TOKEN
@@ -433,6 +428,11 @@ in
     text = builtins.toJSON {
       effortLevel = "high";
       alwaysThinkingEnabled = true;
+      # Use the fullscreen (alt-screen) renderer regardless of how the shell
+      # was launched. Equivalent to /tui fullscreen; unlike CLAUDE_CODE_NO_FLICKER
+      # (set in profileExtra, login-shell only) this does not depend on .profile
+      # being sourced, so code-server terminals / non-login shells get it too.
+      tui = "fullscreen";
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
       env = {
