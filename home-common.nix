@@ -86,6 +86,7 @@ in
     yq
 
     # Network tools
+    cloudflared
     curl
     grpcurl
     mtr
