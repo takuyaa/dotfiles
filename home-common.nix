@@ -424,6 +424,38 @@ in
     '';
   };
 
+  # Claude global CLAUDE.md (shared across macOS/Linux)
+  home.file.".claude/CLAUDE.md".text = ''
+    # Global Claude Code Settings
+
+    ~/.claude/settings.json and ~/.claude/notify.sh are managed by Nix (Home Manager).
+    They are read-only symlinks and must not be edited directly.
+
+    To change settings:
+    1. Edit ~/ghq/github.com/takuyaa/dotfiles/home-common.nix
+       (or home-darwin.nix / home-linux.nix for OS-specific settings)
+    2. Run `rebuild`
+
+    Private instructions should be placed in ~/.claude/CLAUDE.local.md (not managed by Nix).
+
+    ## Memory management policy
+
+    Prefer improving the project harness over saving local memory.
+    When you learn something durable, decide where it belongs:
+
+    - **Belongs to the project** (build/test commands, architecture,
+      conventions, gotchas, recurring tasks) -> edit that project's
+      `CLAUDE.md` or files under its `.claude/`. This is portable across
+      machines, shareable, and reviewable -- always prefer it.
+    - **Belongs to me / cross-project preference** that should not live in a
+      shared repo -> this global `~/.claude/CLAUDE.md` or local memory.
+    - Use local memory only for facts that are machine/checkout-specific or
+      must not be committed. Treat it as a last resort, not the default.
+
+    Before saving a memory, ask: "Could this be a one-line improvement to the
+    project's CLAUDE.md instead?" If yes, do that.
+  '';
+
   home.file.".claude/settings.json" = {
     text = builtins.toJSON {
       effortLevel = "high";

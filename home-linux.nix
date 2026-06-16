@@ -68,20 +68,6 @@
     enableBashIntegration = true;
   };
 
-  # Claude CLAUDE.md (Linux version: rebuild = home-manager switch)
-  home.file.".claude/CLAUDE.md".text = ''
-    # Global Claude Code Settings
-
-    ~/.claude/settings.json and ~/.claude/notify.sh are managed by Nix (Home Manager).
-    They are read-only symlinks and must not be edited directly.
-
-    To change settings:
-    1. Edit ~/ghq/github.com/takuyaa/dotfiles/home-common.nix (or home-linux.nix for Linux-specific)
-    2. Run `rebuild`
-
-    Private instructions should be placed in ~/.claude/CLAUDE.local.md (gitignored).
-  '';
-
   # Claude notify.sh (terminal bell + stderr version for Linux)
   home.file.".claude/notify.sh" = {
     executable = true;
