@@ -74,6 +74,8 @@ in
     livekit
     livekit-cli
     mise
+    mkcert
+    nss.tools
     prek
     shellcheck
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
