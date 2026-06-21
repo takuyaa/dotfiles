@@ -57,6 +57,45 @@ properties:
         id: Git.Git
         source: winget
 
+    # Global Git identity for commits made from the Windows host itself (e.g.
+    # editing this windows/ layer in C:\Users\takuy\dotfiles). Dev-time Git
+    # inside WSL gets its identity from Nix/Home Manager (home-common.nix);
+    # the Windows host is separate, so without this `git commit` here fails
+    # with "Author identity unknown". Writes %USERPROFILE%\.gitconfig.
+    # git.exe is resolved explicitly because PATH may not refresh within a
+    # single `winget configure` run right after the Git package installs.
+    - resource: PSDscResources/Script
+      id: git-identity
+      dependsOn:
+        - git
+      directives:
+        description: Set the global Git identity on the Windows host
+      settings:
+        GetScript: |
+          $git = (Get-Command git -ErrorAction SilentlyContinue).Source
+          @{ Result = if ($git) { & $git config --global user.email } else { '' } }
+        TestScript: |
+          $git = (Get-Command git -ErrorAction SilentlyContinue).Source
+          if (-not $git) {
+            foreach ($p in @("$env:ProgramFiles\Git\cmd\git.exe", "${env:ProgramFiles(x86)}\Git\cmd\git.exe", "$env:LOCALAPPDATA\Programs\Git\cmd\git.exe")) {
+              if (Test-Path $p) { $git = $p; break }
+            }
+          }
+          if (-not $git) { return $false }
+          $name  = & $git config --global user.name  2>$null
+          $email = & $git config --global user.email 2>$null
+          ($name -eq 'Takuya Asano') -and ($email -eq 'takuya.a@gmail.com')
+        SetScript: |
+          $git = (Get-Command git -ErrorAction SilentlyContinue).Source
+          if (-not $git) {
+            foreach ($p in @("$env:ProgramFiles\Git\cmd\git.exe", "${env:ProgramFiles(x86)}\Git\cmd\git.exe", "$env:LOCALAPPDATA\Programs\Git\cmd\git.exe")) {
+              if (Test-Path $p) { $git = $p; break }
+            }
+          }
+          if (-not $git) { throw "git executable not found; ensure the Git package installed" }
+          & $git config --global user.name  'Takuya Asano'
+          & $git config --global user.email 'takuya.a@gmail.com'
+
     # Already-installed Chrome is detected and left as-is (no uninstall needed).
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: chrome
