@@ -8,6 +8,7 @@ Personal development environment configuration using Nix flakes, nix-darwin, and
 |----------|------|------|------|
 | macOS (aarch64-darwin) | — | `takuya.asano` | nix-darwin + Home Manager |
 | Linux (x86_64-linux) | dev-01 (Ubuntu 24.04) | `takuya-a` | Home Manager (standalone) |
+| Windows (x86_64)       | this laptop           | `takuy`        | winget configure (`windows/`, not Nix) |
 
 ## Quick Start
 

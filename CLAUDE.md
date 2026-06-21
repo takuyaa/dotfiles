@@ -15,6 +15,7 @@ Declarative, reproducible config for macOS (Apple Silicon) and Linux.
 - `darwin.nix` — macOS system settings and Homebrew
 - `home-common.nix` — packages, dotfiles, and shell config shared by all hosts
 - `home-darwin.nix` / `home-linux.nix` — OS-specific overrides
+- `windows/` — Windows host config (winget DSC + kanata + Google Japanese IME); applied with `winget configure`, not Nix
 
 Roll back a bad macOS rebuild with `darwin-rebuild switch --rollback`.
 
