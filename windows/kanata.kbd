@@ -1,8 +1,10 @@
 ;; kanata configuration
 ;;
 ;; Thumb keys = IME switch (tap) + a layer (hold), one layer per thumb:
-;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = NUM layer (q->1 ...)
-;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = FN  layer (q->F1 ...)
+;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = SHORTCUTS layer
+;;     (a/c/f/v/x/y/z/s = Ctrl+A/C/F/V/X/Y/Z/S, h/j/k/l = ←↓↑→)
+;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = NUMS layer
+;;     (q..p = 1..0, 1..0 = F1..F10, h/j/k/l = ←↓↑→)
 ;;
 ;; Why F13/F14 instead of Muhenkan/Henkan: when the Windows layout is US
 ;; (00000409), the Muhenkan/Henkan scancodes have no key in that layout and are
@@ -29,60 +31,71 @@
   process-unmapped-keys yes
 )
 
-;; a b f n lctl d [ and lmet are listed here (e, p, k, o are already above) so the
-;; Emacs overrides and the Win-key remap have their keys explicitly defined.
-;; Most map to themselves in base; lmet is @win (see below); all are transparent
-;; in the hold layers. k/o are deliberately left as plain k/o (Ctrl+k / Ctrl+o pass
-;; through native -- see the alias block for why).
+;; a b f n lctl d [ are listed here (e, p, k, o are already above) so the Emacs
+;; overrides have their keys explicitly defined. All map to themselves in base
+;; and are transparent in the hold layers, except a/f which are RC-a / RC-f
+;; (Select All / Find) in the SHORTCUTS layer. k/o are deliberately left as
+;; plain k/o (Ctrl+k / Ctrl+o pass through native -- see the alias block).
 ;;
-;; Win = Cmd: the Win key (lmet) is a tap-hold (@win below) -- TAP = real Win (Start
-;; menu), HOLD = RIGHT Ctrl. Held, it acts as a second "app shortcut" Ctrl: every
-;; Emacs binding here keys off LEFT Ctrl (lctl) only, so Win-held+<key> falls through
-;; as a plain Ctrl+<key> (Win+f = Find, Win+a = Select All, Win+c/v = copy/paste,
-;; Win+s = Save, Win+1..9 = tabs, ... the whole Ctrl set, no enumeration needed).
-;; Using the HOLD means the OS never sees a bare Win mid-combo (no stray Start menu);
-;; a quick TAP still sends a real Win press.
+;; 無変換 hold layer (SHORTCUTS): Ctrl+letter app shortcuts + vim arrows.
+;;   - a/c/f/v/x/y/z/s = Ctrl+A (Select All) / C (Copy) / F (Find) / V (Paste) /
+;;                        X (Cut) / Y (Redo) / Z (Undo) / S (Save)
+;;   - h/j/k/l         = ←↓↑→
+;; 親指ホームポジションから届くので、かつての Win-as-RightCtrl 用法を置き換える。
+;; ショートカットはすべて RIGHT Ctrl (RC-) で発火し、左 Ctrl ベースの defoverrides
+;; (Home/Left/Right/Up/Down 等) に横取りされないようにしている。tap-hold-release の
+;; おかげで「無変換↓ → c↓ → c↑ → 無変換↑」では hold が即発火し IME (F13) は出ない。
+;; 先に無変換を離した場合のみ tap 判定で F13 が漏れ IME が切り替わる -- 仕様として許容。
+;;
+;; 変換 hold layer (NUMS): numbers / function keys を 1 段ずらして並べる。
+;;   - q..p = 1..0       (ホームポジションの 1 段下に数字)
+;;   - 1..0 = F1..F10    (元の数字段に F キー)
+;;   - h/j/k/l = ←↓↑→
 (defsrc
+  1 2 3 4 5 6 7 8 9 0
   q w e r t y u i o p
   h j k l
   muhenkan henkan
-  a b f n lctl d [ lmet
+  a b f n lctl d [
+  c v x z s
 )
 
 (deflayer base
+  1 2 3 4 5 6 7 8 9 0
   q w e r t y u i o p
   h j k l
-  @num @fn
-  a b f n lctl d [ @win
+  @mh @hk
+  a b f n lctl d [
+  c v x z s
 )
 
-(deflayer numbers
-  1    2    3  4     5 6 7 8 9 0
+(deflayer shortcuts
+  _ _ _ _ _ _    _ _ _ _
+  _ _ _ _ _ RC-y _ _ _ _
   left down up right
-  _    _
-  _ _ _ _ _ _ _ _
+  _ _
+  RC-a _ RC-f _ _ _ _
+  RC-c RC-v RC-x RC-z RC-s
 )
 
-(deflayer fnrow
-  f1   f2   f3 f4    f5 f6 f7 f8 f9 f10
+(deflayer nums
+  f1 f2 f3 f4 f5 f6 f7 f8 f9 f10
+  1  2  3  4  5  6  7  8  9  0
   left down up right
-  _    _
-  _ _ _ _ _ _ _ _
+  _ _
+  _ _ _ _ _ _ _
+  _ _ _ _ _
 )
 
 (defalias
   ;; tap = layout-independent IME key (F13/F14), hold (deliberate) = layer.
   ;; tap-hold-release favors clean taps.
-  num (tap-hold-release 200 200 f13 (layer-while-held numbers))
-  fn  (tap-hold-release 200 200 f14 (layer-while-held fnrow))
+  mh (tap-hold-release 200 200 f13 (layer-while-held shortcuts))
+  hk (tap-hold-release 200 200 f14 (layer-while-held nums))
 
-  ;; Win key: TAP = real Win (Start menu); HOLD = Right Ctrl, so Win-held + key is an
-  ;; app shortcut (Win+f Find, Win+c copy, Win+a Select All, ...). Right Ctrl is not
-  ;; caught by the LEFT-Ctrl Emacs bindings, so those pass through natively. Because
-  ;; app shortcuts use the HOLD, the OS never sees a bare Win mid-combo (no stray
-  ;; Start menu). Note: Win+L / Win+D / Win+E etc. aren't available (holding Win is
-  ;; Right Ctrl); a tap opens the Start menu, from which those are reachable.
-  win (tap-hold-press 200 200 lmet rctl)
+  ;; Win key is left as plain `lmet` (no remap) -- Start menu / Win+L / Win+D /
+  ;; Win+E etc. all behave normally. App shortcuts moved to 無変換+letter;
+  ;; see the SHORTCUTS layer above.
 
   ;; Note: Ctrl+k and Ctrl+o are intentionally NOT remapped. They pass through as
   ;; native Ctrl+k / Ctrl+o so terminals (WSL / Windows Terminal) keep their
