@@ -130,6 +130,22 @@ properties:
         source: winget
 
     - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: mtga
+      directives:
+        description: Install Magic The Gathering Arena launcher
+      settings:
+        id: WizardsoftheCoast.MTGALauncher
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: steam
+      directives:
+        description: Install Steam
+      settings:
+        id: Valve.Steam
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: etcher
       directives:
         description: Install balenaEtcher
