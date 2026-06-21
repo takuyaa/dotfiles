@@ -663,7 +663,7 @@ in
     enableDefaultConfig = false;
     settings."*" = {
       AddKeysToAgent = "yes";
-      UseKeychain = "yes";
+      # UseKeychain is macOS-only; set in home-darwin.nix (it errors out on Linux's OpenSSH)
       SendEnv = "LANG LC_*";
       Ciphers = "+aes256-cbc";
       VisualHostKey = "yes";
