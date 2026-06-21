@@ -1,8 +1,10 @@
 ;; kanata configuration
 ;;
-;; Thumb keys = IME switch (tap) + a layer (hold), one layer per thumb:
-;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = SHORTCUTS layer
-;;     (a/c/f/v/x/y/z/s = Ctrl+A/C/F/V/X/Y/Z/S, h/j/k/l = ←↓↑→)
+;; Thumb keys:
+;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = RIGHT Ctrl
+;;     Held, every key becomes Ctrl+key -- Ctrl+A..Z 全部、Ctrl+1..9 (タブ切替) も。
+;;     Right Ctrl で発火するので、左 Ctrl ベースの defoverrides (Home/Left/...) には
+;;     横取りされない。
 ;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = NUMS layer
 ;;     (q..p = 1..0, 1..0 = F1..F10, h/j/k/l = ←↓↑→)
 ;;
@@ -12,17 +14,17 @@
 ;; layout-independent, so they reach the IME under any layout. Bind them in the
 ;; IME: F13 = "IME off / 直接入力", F14 = "ひらがな" (see keymap.txt).
 ;;
-;; Trade-off: putting a hold-layer on the frequently-tapped 英数 key risks
-;; "rollover misfire" (typing a letter before 無変換 is fully released could be
-;; eaten by the NUM layer). We use tap-hold-release to mitigate: a quick tap is
-;; always the IME key; the layer only engages after a deliberate ~200ms hold.
-;; Tune the timeouts below if needed:
-;;   - raise 200 -> fewer misfires, but the layer needs a longer hold
-;;   - lower 200 -> snappier layer, but more misfire risk
-;; If the 英数 key ever feels unreliable, revert 無変換 to a plain `muhenkan`
-;; (no layer) and keep only the FN layer on 変換.
+;; Trade-off: putting a hold action on the frequently-tapped 英数 key risks
+;; "rollover misfire". 無変換 uses tap-hold-press (modifier engages on the next
+;; key press) since fast Ctrl+letter rolls are the primary use; 変換 uses
+;; tap-hold-release (safer for layer activation since a stray hold would replay
+;; the buffered key under the wrong layer). Tune the 200ms timeouts if needed:
+;;   - raise -> fewer misfires, but feels laggier
+;;   - lower -> snappier, but more misfires
+;; If the 英数 key ever feels unreliable, revert 無変換 to a plain `muhenkan`.
 ;;
-;; Both layers also expose vim-style arrows on h/j/k/l.
+;; vim 風の矢印 (h/j/k/l = ←↓↑→) は変換側 NUMS layer のみ。無変換側はモディファイア
+;; 専用にしたので 無変換+h/j/k/l は Ctrl+H/J/K/L になる。
 ;;
 ;; Pairs with: Windows layout set to US (HKCU Substitutes 00000411->00000409)
 ;; for US symbols, and the IME keymap (keymap.txt) binding F13/F14.
@@ -32,20 +34,15 @@
 )
 
 ;; a b f n lctl d [ are listed here (e, p, k, o are already above) so the Emacs
-;; overrides have their keys explicitly defined. All map to themselves in base
-;; and are transparent in the hold layers, except a/f which are RC-a / RC-f
-;; (Select All / Find) in the SHORTCUTS layer. k/o are deliberately left as
-;; plain k/o (Ctrl+k / Ctrl+o pass through native -- see the alias block).
+;; defoverrides have their keys explicitly defined. All map to themselves in base
+;; and are transparent in the hold layer. k/o are deliberately left as plain k/o
+;; (Ctrl+k / Ctrl+o pass through native -- see the alias block).
 ;;
-;; 無変換 hold layer (SHORTCUTS): Ctrl+letter app shortcuts + vim arrows.
-;;   - a/c/f/v/x/y/z/s = Ctrl+A (Select All) / C (Copy) / F (Find) / V (Paste) /
-;;                        X (Cut) / Y (Redo) / Z (Undo) / S (Save)
-;;   - h/j/k/l         = ←↓↑→
-;; 親指ホームポジションから届くので、かつての Win-as-RightCtrl 用法を置き換える。
-;; ショートカットはすべて RIGHT Ctrl (RC-) で発火し、左 Ctrl ベースの defoverrides
-;; (Home/Left/Right/Up/Down 等) に横取りされないようにしている。tap-hold-release の
-;; おかげで「無変換↓ → c↓ → c↑ → 無変換↑」では hold が即発火し IME (F13) は出ない。
-;; 先に無変換を離した場合のみ tap 判定で F13 が漏れ IME が切り替わる -- 仕様として許容。
+;; 無変換 = Right Ctrl: 無変換 hold は専用レイヤーを持たず、単に Right Ctrl を
+;; 押した状態にする。これにより 無変換+任意キー = Ctrl+任意キー がレイヤー定義
+;; なしで全部効く (旧 Win-as-RightCtrl と同じトリックを無変換に移植)。Right Ctrl
+;; を使うのは、左 Ctrl ベースの defoverrides (Ctrl+a -> Home など) に横取りされない
+;; ようにするため -- 無変換+a は Select All のまま、Home にはならない。
 ;;
 ;; 変換 hold layer (NUMS): numbers / function keys を 1 段ずらして並べる。
 ;;   - q..p = 1..0       (ホームポジションの 1 段下に数字)
@@ -57,7 +54,6 @@
   h j k l
   muhenkan henkan
   a b f n lctl d [
-  c v x z s
 )
 
 (deflayer base
@@ -66,16 +62,6 @@
   h j k l
   @mh @hk
   a b f n lctl d [
-  c v x z s
-)
-
-(deflayer shortcuts
-  _ _ _ _ _ _    _ _ _ _
-  _ _ _ _ _ RC-y _ _ _ _
-  left down up right
-  _ _
-  RC-a _ RC-f _ _ _ _
-  RC-c RC-v RC-x RC-z RC-s
 )
 
 (deflayer nums
@@ -84,18 +70,17 @@
   left down up right
   _ _
   _ _ _ _ _ _ _
-  _ _ _ _ _
 )
 
 (defalias
-  ;; tap = layout-independent IME key (F13/F14), hold (deliberate) = layer.
-  ;; tap-hold-release favors clean taps.
-  mh (tap-hold-release 200 200 f13 (layer-while-held shortcuts))
-  hk (tap-hold-release 200 200 f14 (layer-while-held nums))
+  ;; tap = layout-independent IME key (F13/F14).
+  ;; 無変換: hold = Right Ctrl (即発火、Ctrl+key を出す)
+  ;; 変換:   hold = NUMS layer (release-favored、誤発火しにくい)
+  mh (tap-hold-press    200 200 f13 rctl)
+  hk (tap-hold-release  200 200 f14 (layer-while-held nums))
 
   ;; Win key is left as plain `lmet` (no remap) -- Start menu / Win+L / Win+D /
-  ;; Win+E etc. all behave normally. App shortcuts moved to 無変換+letter;
-  ;; see the SHORTCUTS layer above.
+  ;; Win+E etc. all behave normally.
 
   ;; Note: Ctrl+k and Ctrl+o are intentionally NOT remapped. They pass through as
   ;; native Ctrl+k / Ctrl+o so terminals (WSL / Windows Terminal) keep their
@@ -127,6 +112,8 @@
 ;; C-b bold, C-e, C-n new, C-p print, C-d bookmark, C-[ ...). Unlike macOS (where
 ;; these sit on Ctrl because Cmd is the shortcut modifier), Windows has no separate
 ;; modifier and kanata can't tell whether a text field is focused, so this is global.
+;; 無変換 hold = Right Ctrl はこの defoverrides の対象外なので、無変換+a/b/f/n/d/p/h/e/[
+;; は奪われずに Ctrl+letter として効く。
 ;;
 ;; lctl also covers CapsLock (mapped to Left Ctrl via the Windows Scancode Map).
 ;; If you also use the *right* Ctrl for these, add (rctl a) (home) ... lines too.
