@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Personal dotfiles managed with Nix flakes, nix-darwin, and Home Manager.
-Declarative, reproducible config for macOS (Apple Silicon) and Linux.
+Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 
 ## Commands
 
