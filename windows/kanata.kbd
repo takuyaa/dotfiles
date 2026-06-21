@@ -4,9 +4,11 @@
 ;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = RIGHT Ctrl
 ;;     Held, every key becomes Ctrl+key -- Ctrl+A..Z 全部、Ctrl+1..9 (タブ切替) も。
 ;;     Right Ctrl で発火するので、左 Ctrl ベースの defoverrides (Home/Left/...) には
-;;     横取りされない。
+;;     横取りされない。例外: 無変換+[/] は defoverrides で Alt+Left/Right (browser
+;;     back/forward) に置換 -- Mac の Cmd+[/] に近い指の動き。
 ;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = NUMS layer
-;;     (q..p = 1..0, 1..0 = F1..F10, h/j/k/l = ←↓↑→)
+;;     (q..p = 1..0, 1..0 = F1..F10, h/j/k/l = ←↓↑→,
+;;      n/m/,/. = Home/PgDn/PgUp/End)
 ;;
 ;; Why F13/F14 instead of Muhenkan/Henkan: when the Windows layout is US
 ;; (00000409), the Muhenkan/Henkan scancodes have no key in that layout and are
@@ -45,15 +47,17 @@
 ;; ようにするため -- 無変換+a は Select All のまま、Home にはならない。
 ;;
 ;; 変換 hold layer (NUMS): numbers / function keys を 1 段ずらして並べる。
-;;   - q..p = 1..0       (ホームポジションの 1 段下に数字)
-;;   - 1..0 = F1..F10    (元の数字段に F キー)
+;;   - q..p   = 1..0           (ホームポジションの 1 段下に数字)
+;;   - 1..0   = F1..F10        (元の数字段に F キー)
 ;;   - h/j/k/l = ←↓↑→
+;;   - n/m/,/. = Home/PgDn/PgUp/End (矢印の真下に "強い版" の移動を並べる)
 (defsrc
   1 2 3 4 5 6 7 8 9 0
   q w e r t y u i o p
   h j k l
   muhenkan henkan
-  a b f n lctl d [
+  a b f n lctl d [ ]
+  m , .
 )
 
 (deflayer base
@@ -61,7 +65,8 @@
   q w e r t y u i o p
   h j k l
   @mh @hk
-  a b f n lctl d [
+  a b f n lctl d [ ]
+  m , .
 )
 
 (deflayer nums
@@ -69,7 +74,8 @@
   1  2  3  4  5  6  7  8  9  0
   left down up right
   _ _
-  _ _ _ _ _ _ _
+  _ _ _ home _ _ _ _
+  pgdn pgup end
 )
 
 (defalias
@@ -117,6 +123,12 @@
 ;;
 ;; lctl also covers CapsLock (mapped to Left Ctrl via the Windows Scancode Map).
 ;; If you also use the *right* Ctrl for these, add (rctl a) (home) ... lines too.
+;;
+;; rctl+[/] (= 無変換+[/]) -> Alt+Left/Right = browser back/forward (Chrome /
+;; Edge / Explorer / VSCode 等 Windows のほぼ全部のアプリで効く)。Mac の Cmd+[/]
+;; に近い指の動きで戻る・進むができる。代償: 無変換+[ から Esc (Ctrl+[ = ASCII 0x1B)
+;; が出なくなる -- Esc は物理 Esc キーか左 Ctrl+[ (上の (lctl [) (esc) で Esc 化済み)
+;; で取れる。
 (defoverrides
   (lctl a) (home)
   (lctl e) (end)
@@ -127,4 +139,6 @@
   (lctl d) (del)
   (lctl [) (esc)
   (lctl h) (bspc)
+  (rctl [) (lalt left)
+  (rctl ]) (lalt right)
 )
