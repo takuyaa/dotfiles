@@ -267,9 +267,12 @@ code .
 使えるようにするための手順です。winget で Tailscale 本体は入りますが、tailnet への
 サインインと WSL の再起動は手動です。
 
-1. **Tailscale にサインイン。** スタートメニューから Tailscale を起動し、tailnet に
-   サインインします（または管理者 PowerShell で `tailscale up`）。タスクトレイの
-   アイコンが接続済みになり、`tailscale ip -4` で `100.x` の自分の IP が出れば OK。
+1. **Tailscale にサインイン。** スタートメニューから Tailscale を起動し、dev-01 と
+   同じ tailnet にサインインします（または管理者 PowerShell で `tailscale up`）。
+   タスクトレイのアイコンが接続済みになり、`tailscale ip -4` で `100.x` の自分の IP
+   が出れば OK。複数アカウントを使い分けている場合は、GUI のアカウント切替（または
+   `tailscale switch`）で**正しい tailnet をアクティブに**してください（別アカウントの
+   ままだと dev-01 が peer に現れません）。
 
 2. **WSL を再起動して mirrored ネットワークを反映。** PowerShell で:
 
@@ -280,15 +283,27 @@ code .
    再度 WSL を開き、`ip route` の default が `eth0`（mirrored では Windows 共有）に
    なっていること、`ping 100.120.98.107` などで homelab に届くことを確認します。
 
-3. **公開鍵を dev-01 に登録**（初回のみ）。WSL 内の `~/.ssh/id_ed25519.pub` を
-   dev-01 の `~/.ssh/authorized_keys` に追加します。dev-01 にパスワードログイン
-   できるなら:
+3. **公開鍵を GitHub に登録 → dev Pod を再起動。** dev-01（k3s 上の Pod）は
+   `entrypoint.sh` で起動時に `https://github.com/takuyaa.keys` から
+   `authorized_keys` を取得します（`PasswordAuthentication no` なので `ssh-copy-id`
+   は通りません）。WSL 内で:
 
    ```bash
-   ssh-copy-id -i ~/.ssh/id_ed25519.pub dev
+   # GITHUB_TOKEN を export している場合は一時的に外して refresh する
+   GITHUB_TOKEN= gh auth refresh -h github.com -s admin:public_key
+   GITHUB_TOKEN= gh ssh-key add ~/.ssh/id_ed25519.pub --title "wsl-<host>"
    ```
 
-   その後 `ssh dev` でログインできます。
+   その後、kubectl が使えるマシンから Pod を再起動して `authorized_keys` を
+   取り直させます（`authorized_keys` は PVC に残るため、再起動しない限り反映
+   されません）。
+
+   ```bash
+   export KUBECONFIG=$HOME/.kube/k3s-prod.yaml
+   kubectl delete pod -n dev dev-0
+   ```
+
+   Pod が立ち上がったら `ssh dev` でログインできます。
 
 ## 使い方メモ
 
