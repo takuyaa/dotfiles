@@ -1,0 +1,9 @@
+# WSL2 global config — deployed to %UserProfile%\.wslconfig by configuration.dsc.yaml.
+# Source of truth lives in the dotfiles repo; do not edit the deployed copy directly.
+#
+# mirrored networking makes WSL share the Windows host network stack, so the
+# Tailscale interface on Windows (100.x.y.z) is reachable from inside WSL.
+# This is what lets `ssh dev` reach the homelab over Tailscale.
+# Requires Windows 11 22H2+. Apply changes with `wsl --shutdown`.
+[wsl2]
+networkingMode=mirrored

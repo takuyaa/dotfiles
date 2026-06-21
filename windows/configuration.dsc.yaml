@@ -153,6 +153,18 @@ properties:
         id: Anthropic.Claude
         source: winget
 
+    # Tailscale on the Windows host. Combined with networkingMode=mirrored in
+    # .wslconfig (see the wslconfig resource below), this gives WSL access to the
+    # tailnet, so `ssh dev` reaches the homelab over Tailscale. After install,
+    # sign in once via the Tailscale GUI / `tailscale up` to join the tailnet.
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: tailscale
+      directives:
+        description: Install Tailscale (WSL reaches the tailnet via mirrored networking)
+      settings:
+        id: tailscale.tailscale
+        source: winget
+
     # Google Japanese IME — robust key customization for the 英数/かな
     # mode keys (Muhenkan = IME off, Henkan = ひらがな). See README for the
     # exact key-setting steps to apply after install.
@@ -256,3 +268,25 @@ properties:
           $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
           $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
           Register-ScheduledTask -TaskName 'kanata' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+
+    # ---- WSL networking ----
+    # Deploy .wslconfig (networkingMode=mirrored) from this repo to %UserProfile%.
+    # WSL only reads it from the fixed path %UserProfile%\.wslconfig, so we copy
+    # rather than reference the repo path. The source of truth is windows/wslconfig.
+    # Run `wsl --shutdown` after applying for the network mode change to take effect.
+    - resource: PSDscResources/Script
+      id: wslconfig
+      directives:
+        description: Deploy .wslconfig (mirrored networking) to the user profile
+      settings:
+        GetScript: |
+          @{ Result = (Get-Content -Raw "$env:USERPROFILE\.wslconfig" -ErrorAction SilentlyContinue) }
+        TestScript: |
+          $src = 'C:\Users\takuy\dotfiles\windows\wslconfig'
+          $dst = "$env:USERPROFILE\.wslconfig"
+          if (-not (Test-Path $dst)) { return $false }
+          (Get-FileHash $src).Hash -eq (Get-FileHash $dst).Hash
+        SetScript: |
+          $src = 'C:\Users\takuy\dotfiles\windows\wslconfig'
+          $dst = "$env:USERPROFILE\.wslconfig"
+          Copy-Item -Path $src -Destination $dst -Force
