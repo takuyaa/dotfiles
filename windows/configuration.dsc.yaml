@@ -237,8 +237,16 @@ properties:
       settings:
         GetScript: |
           @{ Result = (Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue).TaskName }
+        # Not just "does the task exist" -- also verify it points at THIS repo's
+        # kanata.kbd. An older setup once registered the task against a stale copy
+        # (C:\Users\takuy\Claude\Projects\...\kanata.kbd), so edits to the repo
+        # config had no effect and an existence-only test never re-registered it.
+        # Returning $false on a wrong --cfg path makes re-applying self-heal it.
         TestScript: |
-          [bool](Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue)
+          $t = Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue
+          if (-not $t) { return $false }
+          $cfg = 'C:\Users\takuy\dotfiles\windows\kanata.kbd'
+          [bool]($t.Actions | Where-Object { $_.Arguments -like ('*"{0}"*' -f $cfg) })
         SetScript: |
           $exe = $null
           # winget exposes the canonical command as a shim under Links.
