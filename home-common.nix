@@ -695,6 +695,16 @@ in
       set -s extended-keys on
       set -as terminal-features 'xterm*:extkeys'
 
+      # OSC 52 clipboard: relay copy events to the outer terminal's clipboard.
+      # `set-clipboard on` makes tmux's own copy (mouse drag, copy-mode) emit
+      # OSC 52, and also passes OSC 52 from inner apps (Claude TUI, nvim).
+      # Pair with `terminal-features ...:clipboard` so tmux knows the outer
+      # term accepts OSC 52 (Windows Terminal v1.20+, kitty, wezterm, iTerm2).
+      # Lets us mouse-drag inside a single pane and paste on the Windows side,
+      # without falling back to Shift+drag (which ignores pane boundaries).
+      set -g set-clipboard on
+      set -as terminal-features 'xterm*:clipboard'
+
       # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
