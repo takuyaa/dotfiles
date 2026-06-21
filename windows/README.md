@@ -113,16 +113,19 @@ US 配列では Muhenkan/Henkan のスキャンコードが仮想キーに変換
 | b | ← | f | → |
 | p | ↑ | n | ↓ |
 | d | 前方削除（Delete） | h | 後方削除（Backspace） |
-| k | 行末まで切り取り（クリップボードへ） | [ | Esc |
-| o | 行を開く（改行を挿入してカーソルは残す） | | |
+| [ | Esc | | |
 
-移動・削除系（a/e/b/f/p/n/d/h/[）は `defoverrides`、行末削除（k）と行を開く（o）は
-`unmod`＋`fork` で実装しています。`defoverrides` はタイムアウトが無く、押されているキーの組み合わせを
-毎回判定するので、Ctrl を押しっぱなしで連打しても毎回効きます（`defchordsv2` は最初の
-Ctrl 押下から計時するため、押しっぱなしだと2回目以降が時間切れで素のキーになる）。Ctrl+k
-は `unmod` で Ctrl を一時的に外し、「Shift+End で行末まで選択→Shift+Delete で切り取り」を
-送ります（クリップボードに残るので貼り付けで戻せる。Ctrl+X を使わないのは VS Code 等が
-再割り当てするため。Ctrl を外すのは Ctrl+Shift+End＝文書末選択を避けるため）。
+移動・削除系（a/e/b/f/p/n/d/h/[）は `defoverrides` で実装しています。`defoverrides` は
+タイムアウトが無く、押されているキーの組み合わせを毎回判定するので、Ctrl を押しっぱなしで
+連打しても毎回効きます（`defchordsv2` は最初の Ctrl 押下から計時するため、押しっぱなしだと
+2回目以降が時間切れで素のキーになる）。
+
+なお Ctrl+k（行末まで kill）と Ctrl+o は**あえて差し替えていません**。以前は GUI 向けに
+Shift+End→Shift+Delete（行末まで切り取り）や Enter→Left（行を開く）へ `fork` していましたが、
+ターミナル（WSL / Windows Terminal）では kanata の低レベルフックがキーを横取りするため、
+これらが端末のエスケープシーケンスとして届き、シェル上で Ctrl+k が `~F` などと表示される
+問題がありました。そのため素通しにして、ターミナルの readline 標準（Ctrl+k = 行末まで kill）が
+効くようにしています。代償として、GUI アプリでの macOS 風の行末切り取り／行を開く は無くなります。
 
 差し替えるのはこれらの Ctrl コンボだけで、他（Ctrl+C/V/X/Z/S、Ctrl+←→ など）はそのまま
 使えます。代償として、差し替えたキーの標準の意味（Ctrl+A 全選択、Ctrl+F 検索、Ctrl+B

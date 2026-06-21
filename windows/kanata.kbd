@@ -30,10 +30,10 @@
 )
 
 ;; a b f n lctl d [ and lmet are listed here (e, p, k, o are already above) so the
-;; Emacs overrides/forks and the Win-key remap have their keys explicitly defined.
-;; Most map to themselves in base; k/o are @ctrlk / @ctrlo (plain k/o, but Ctrl+k =
-;; kill-to-EOL, Ctrl+o = open line) and lmet is @win (see below); all are transparent
-;; in the hold layers.
+;; Emacs overrides and the Win-key remap have their keys explicitly defined.
+;; Most map to themselves in base; lmet is @win (see below); all are transparent
+;; in the hold layers. k/o are deliberately left as plain k/o (Ctrl+k / Ctrl+o pass
+;; through native -- see the alias block for why).
 ;;
 ;; Win = Cmd: the Win key (lmet) is a tap-hold (@win below) -- TAP = real Win (Start
 ;; menu), HOLD = RIGHT Ctrl. Held, it acts as a second "app shortcut" Ctrl: every
@@ -50,8 +50,8 @@
 )
 
 (deflayer base
-  q w e r t y u i @ctrlo p
-  h j @ctrlk l
+  q w e r t y u i o p
+  h j k l
   @num @fn
   a b f n lctl d [ @win
 )
@@ -84,30 +84,14 @@
   ;; Right Ctrl); a tap opens the Start menu, from which those are reachable.
   win (tap-hold-press 200 200 lmet rctl)
 
-  ;; Ctrl+k = kill to end of line (macOS/Emacs): select to EOL (Shift+End), then
-  ;; CUT (Shift+Delete) so the text lands on the clipboard (paste / Win+V to get it
-  ;; back) instead of being discarded. unmod drops the held Ctrl for each step so
-  ;; they are bare Shift+End / Shift+Delete -- not Ctrl+Shift+End (select to doc
-  ;; end) / Ctrl+Shift+Delete (a Windows security combo). We use Shift+Delete, not
-  ;; Ctrl+X, because editors rebind Ctrl+X (in VS Code's Emacs mode C-x is a chord
-  ;; prefix, so it would not cut). fork runs it only while Ctrl is held, re-checked
-  ;; every press (no timeout), so holding Ctrl and tapping k kills line after line.
-  ;; Plain k (no Ctrl) types k.
-  ;; Caveat: this is a global, clipboard-based kill. An editor's own Emacs binding
-  ;; (e.g. VS Code) never sees Ctrl+k -- kanata intercepts it first -- so the
-  ;; editor's kill-ring won't engage; the text goes to the system clipboard.
-  killeol (macro (unmod lsft end) (unmod lsft del))
-  ;; trigger on LEFT Ctrl only: the Win key is Right Ctrl (app shortcuts), so
-  ;; Win+k must stay native Ctrl+K rather than firing the Emacs kill.
-  ctrlk   (fork k @killeol (lctl))
-
-  ;; Ctrl+o = open line (macOS/Emacs): insert a newline after the cursor but keep
-  ;; the cursor where it is (Enter, then Left to step back before the newline).
-  ;; unmod drops Ctrl so it is plain Enter / Left, not Ctrl+Enter / Ctrl+Left.
-  ;; fork runs it only while Ctrl is held; plain o (no Ctrl) just types o.
-  openline (macro (unmod ret) (unmod left))
-  ;; LEFT Ctrl only (Win = Right Ctrl, so Win+o stays native Ctrl+O / Open).
-  ctrlo    (fork o @openline (lctl))
+  ;; Note: Ctrl+k and Ctrl+o are intentionally NOT remapped. They pass through as
+  ;; native Ctrl+k / Ctrl+o so terminals (WSL / Windows Terminal) keep their
+  ;; readline bindings (Ctrl+k = kill-to-EOL, Ctrl+o = operate-and-get-next). A
+  ;; previous version forked them into Shift+End/Shift+Delete (GUI "kill line")
+  ;; and Enter/Left (GUI "open line"), but those emit terminal escape sequences in
+  ;; a shell -- e.g. Ctrl+k printed a stray `~F` -- because kanata's low-level hook
+  ;; intercepts the key before the terminal ever sees it. Trade-off: GUI apps no
+  ;; longer get macOS-style kill-to-EOL / open-line on these keys.
 )
 
 ;; macOS-style Emacs caret motion / editing:
@@ -116,8 +100,7 @@
 ;;   Ctrl+p -> Up (↑)             Ctrl+n -> Down (↓)
 ;;   Ctrl+d -> Delete (前方削除)   Ctrl+[ -> Esc
 ;;   Ctrl+h -> Backspace (後方削除)
-;;   Ctrl+k -> kill to end of line  (done via @ctrlk / @killeol above, not here)
-;;   Ctrl+o -> open line            (done via @ctrlo / @openline above, not here)
+;; (Ctrl+k / Ctrl+o are NOT remapped -- they pass through native; see alias block.)
 ;;
 ;; defoverrides (not defchordsv2): an override fires whenever all its keys are
 ;; held, re-checked on every key event with NO timeout. So you can keep Ctrl held
