@@ -115,7 +115,7 @@
 ;;   Ctrl+b -> Left (←)           Ctrl+f -> Right (→)
 ;;   Ctrl+p -> Up (↑)             Ctrl+n -> Down (↓)
 ;;   Ctrl+d -> Delete (前方削除)   Ctrl+[ -> Esc
-;;   Ctrl+h -> Backspace (後方削除)   Ctrl+j -> Enter (改行)
+;;   Ctrl+h -> Backspace (後方削除)
 ;;   Ctrl+k -> kill to end of line  (done via @ctrlk / @killeol above, not here)
 ;;   Ctrl+o -> open line            (done via @ctrlo / @openline above, not here)
 ;;
@@ -144,5 +144,4 @@
   (lctl d) (del)
   (lctl [) (esc)
   (lctl h) (bspc)
-  (lctl j) (ret)
 )
