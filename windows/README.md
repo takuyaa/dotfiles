@@ -201,42 +201,6 @@ Start-ScheduledTask -TaskName kanata
 Ctrl として効くこと。kanata を昇格実行中にゲーム/アプリが誤作動する場合は、
 自動起動スクリプトの `-RunLevel Highest` を `Limited` に変えて再適用してください。
 
-### kanata.kbd を編集したのに反映されないとき
-
-kanata は config を**起動時に一度だけ**読み、ファイル変更を監視しません。さらに
-**実際に読むのはスケジュールタスクの `--cfg` が指すファイル**で、リポジトリの
-`kanata.kbd` とは限りません（過去に初回セットアップ時の置き土産
-`C:\Users\takuy\Claude\Projects\...\kanata.kbd` を指したまま登録され、リポジトリ
-側の編集がまったく反映されない、というハマりがありました）。
-
-まず実際に読んでいるパスを確認します。
-
-```powershell
-(Get-ScheduledTask -TaskName kanata).Actions.Arguments
-```
-
-`--cfg "C:\Users\takuy\dotfiles\windows\kanata.kbd"` 以外を指していたら、タスクを
-向け直します（**管理者 PowerShell**）。
-
-```powershell
-$exe = "C:\Users\takuy\AppData\Local\Microsoft\WinGet\Links\kanata_windows_gui_winIOv2_x64.exe"
-$cfg = "C:\Users\takuy\dotfiles\windows\kanata.kbd"
-Set-ScheduledTask -TaskName kanata -Action (New-ScheduledTaskAction -Execute $exe -Argument ('--cfg "{0}"' -f $cfg))
-```
-
-パスが正しくても、走っている kanata は古い config をメモリに保持したままなので、
-**プロセスを再起動**して読み直させます（**管理者 PowerShell**。タスクが最高権限で
-動くため、非昇格シェルからは Access Denied になります）。
-
-```powershell
-Stop-Process -Name kanata_windows_gui_winIOv2_x64 -Force
-Start-ScheduledTask -TaskName kanata
-```
-
-なお `configuration.dsc.yaml` の `kanata-autostart` は TestScript で `--cfg` の
-パスまで検証するので、`winget configure` を再適用すれば誤ったパスは自己修復され
-ます（プロセスの再起動だけは別途必要）。
-
 ## 手動の後処理ステップ 4: WSL ディストロの初期化
 
 `Microsoft.WSL` は WSL 機能を入れるだけで、開発環境そのものは
