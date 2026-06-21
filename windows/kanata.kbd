@@ -1,0 +1,148 @@
+;; kanata configuration
+;;
+;; Thumb keys = IME switch (tap) + a layer (hold), one layer per thumb:
+;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = NUM layer (q->1 ...)
+;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = FN  layer (q->F1 ...)
+;;
+;; Why F13/F14 instead of Muhenkan/Henkan: when the Windows layout is US
+;; (00000409), the Muhenkan/Henkan scancodes have no key in that layout and are
+;; not translated to a VK, so the IME never sees them. F13-F24 are
+;; layout-independent, so they reach the IME under any layout. Bind them in the
+;; IME: F13 = "IME off / 直接入力", F14 = "ひらがな" (see keymap.txt).
+;;
+;; Trade-off: putting a hold-layer on the frequently-tapped 英数 key risks
+;; "rollover misfire" (typing a letter before 無変換 is fully released could be
+;; eaten by the NUM layer). We use tap-hold-release to mitigate: a quick tap is
+;; always the IME key; the layer only engages after a deliberate ~200ms hold.
+;; Tune the timeouts below if needed:
+;;   - raise 200 -> fewer misfires, but the layer needs a longer hold
+;;   - lower 200 -> snappier layer, but more misfire risk
+;; If the 英数 key ever feels unreliable, revert 無変換 to a plain `muhenkan`
+;; (no layer) and keep only the FN layer on 変換.
+;;
+;; Both layers also expose vim-style arrows on h/j/k/l.
+;;
+;; Pairs with: Windows layout set to US (HKCU Substitutes 00000411->00000409)
+;; for US symbols, and the IME keymap (keymap.txt) binding F13/F14.
+
+(defcfg
+  process-unmapped-keys yes
+)
+
+;; a b f n lctl d [ and lmet are listed here (e, p, k, o are already above) so the
+;; Emacs overrides/forks and the Win-key remap have their keys explicitly defined.
+;; Most map to themselves in base; k/o are @ctrlk / @ctrlo (plain k/o, but Ctrl+k =
+;; kill-to-EOL, Ctrl+o = open line) and lmet is @win (see below); all are transparent
+;; in the hold layers.
+;;
+;; Win = Cmd: the Win key (lmet) is a tap-hold (@win below) -- TAP = real Win (Start
+;; menu), HOLD = RIGHT Ctrl. Held, it acts as a second "app shortcut" Ctrl: every
+;; Emacs binding here keys off LEFT Ctrl (lctl) only, so Win-held+<key> falls through
+;; as a plain Ctrl+<key> (Win+f = Find, Win+a = Select All, Win+c/v = copy/paste,
+;; Win+s = Save, Win+1..9 = tabs, ... the whole Ctrl set, no enumeration needed).
+;; Using the HOLD means the OS never sees a bare Win mid-combo (no stray Start menu);
+;; a quick TAP still sends a real Win press.
+(defsrc
+  q w e r t y u i o p
+  h j k l
+  muhenkan henkan
+  a b f n lctl d [ lmet
+)
+
+(deflayer base
+  q w e r t y u i @ctrlo p
+  h j @ctrlk l
+  @num @fn
+  a b f n lctl d [ @win
+)
+
+(deflayer numbers
+  1    2    3  4     5 6 7 8 9 0
+  left down up right
+  _    _
+  _ _ _ _ _ _ _ _
+)
+
+(deflayer fnrow
+  f1   f2   f3 f4    f5 f6 f7 f8 f9 f10
+  left down up right
+  _    _
+  _ _ _ _ _ _ _ _
+)
+
+(defalias
+  ;; tap = layout-independent IME key (F13/F14), hold (deliberate) = layer.
+  ;; tap-hold-release favors clean taps.
+  num (tap-hold-release 200 200 f13 (layer-while-held numbers))
+  fn  (tap-hold-release 200 200 f14 (layer-while-held fnrow))
+
+  ;; Win key: TAP = real Win (Start menu); HOLD = Right Ctrl, so Win-held + key is an
+  ;; app shortcut (Win+f Find, Win+c copy, Win+a Select All, ...). Right Ctrl is not
+  ;; caught by the LEFT-Ctrl Emacs bindings, so those pass through natively. Because
+  ;; app shortcuts use the HOLD, the OS never sees a bare Win mid-combo (no stray
+  ;; Start menu). Note: Win+L / Win+D / Win+E etc. aren't available (holding Win is
+  ;; Right Ctrl); a tap opens the Start menu, from which those are reachable.
+  win (tap-hold-press 200 200 lmet rctl)
+
+  ;; Ctrl+k = kill to end of line (macOS/Emacs): select to EOL (Shift+End), then
+  ;; CUT (Shift+Delete) so the text lands on the clipboard (paste / Win+V to get it
+  ;; back) instead of being discarded. unmod drops the held Ctrl for each step so
+  ;; they are bare Shift+End / Shift+Delete -- not Ctrl+Shift+End (select to doc
+  ;; end) / Ctrl+Shift+Delete (a Windows security combo). We use Shift+Delete, not
+  ;; Ctrl+X, because editors rebind Ctrl+X (in VS Code's Emacs mode C-x is a chord
+  ;; prefix, so it would not cut). fork runs it only while Ctrl is held, re-checked
+  ;; every press (no timeout), so holding Ctrl and tapping k kills line after line.
+  ;; Plain k (no Ctrl) types k.
+  ;; Caveat: this is a global, clipboard-based kill. An editor's own Emacs binding
+  ;; (e.g. VS Code) never sees Ctrl+k -- kanata intercepts it first -- so the
+  ;; editor's kill-ring won't engage; the text goes to the system clipboard.
+  killeol (macro (unmod lsft end) (unmod lsft del))
+  ;; trigger on LEFT Ctrl only: the Win key is Right Ctrl (app shortcuts), so
+  ;; Win+k must stay native Ctrl+K rather than firing the Emacs kill.
+  ctrlk   (fork k @killeol (lctl))
+
+  ;; Ctrl+o = open line (macOS/Emacs): insert a newline after the cursor but keep
+  ;; the cursor where it is (Enter, then Left to step back before the newline).
+  ;; unmod drops Ctrl so it is plain Enter / Left, not Ctrl+Enter / Ctrl+Left.
+  ;; fork runs it only while Ctrl is held; plain o (no Ctrl) just types o.
+  openline (macro (unmod ret) (unmod left))
+  ;; LEFT Ctrl only (Win = Right Ctrl, so Win+o stays native Ctrl+O / Open).
+  ctrlo    (fork o @openline (lctl))
+)
+
+;; macOS-style Emacs caret motion / editing:
+;;   Ctrl+a -> Home (行頭)        Ctrl+e -> End (行末)
+;;   Ctrl+b -> Left (←)           Ctrl+f -> Right (→)
+;;   Ctrl+p -> Up (↑)             Ctrl+n -> Down (↓)
+;;   Ctrl+d -> Delete (前方削除)   Ctrl+[ -> Esc
+;;   Ctrl+h -> Backspace (後方削除)   Ctrl+j -> Enter (改行)
+;;   Ctrl+k -> kill to end of line  (done via @ctrlk / @killeol above, not here)
+;;   Ctrl+o -> open line            (done via @ctrlo / @openline above, not here)
+;;
+;; defoverrides (not defchordsv2): an override fires whenever all its keys are
+;; held, re-checked on every key event with NO timeout. So you can keep Ctrl held
+;; and tap these repeatedly and every press fires. (defchordsv2's timeout is
+;; measured from the first Ctrl press, so holding Ctrl makes the second tap time
+;; out and the bare key leaks through -- which is why we don't use it.)
+;;
+;; Only the listed Ctrl combos are remapped; every other Ctrl shortcut (C-c, C-v,
+;; C-x, C-z, C-s, C-Backspace, C-Left/Right, C-1..9, ...) passes through. Trade-
+;; off: the native meaning of the remapped ones is lost (C-a select-all, C-f find,
+;; C-b bold, C-e, C-n new, C-p print, C-d bookmark, C-[ ...). Unlike macOS (where
+;; these sit on Ctrl because Cmd is the shortcut modifier), Windows has no separate
+;; modifier and kanata can't tell whether a text field is focused, so this is global.
+;;
+;; lctl also covers CapsLock (mapped to Left Ctrl via the Windows Scancode Map).
+;; If you also use the *right* Ctrl for these, add (rctl a) (home) ... lines too.
+(defoverrides
+  (lctl a) (home)
+  (lctl e) (end)
+  (lctl b) (left)
+  (lctl f) (right)
+  (lctl p) (up)
+  (lctl n) (down)
+  (lctl d) (del)
+  (lctl [) (esc)
+  (lctl h) (bspc)
+  (lctl j) (ret)
+)

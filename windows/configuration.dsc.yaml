@@ -1,0 +1,219 @@
+# WinGet Configuration — declarative dev environment setup
+# Apply:    winget configure .\configuration.dsc.yaml
+# Validate: winget configure validate .\configuration.dsc.yaml
+# Requires: winget v1.6.2631 or later
+properties:
+  configurationVersion: 0.2.0
+
+  # assertions: prerequisites that must hold before applying
+  assertions:
+    - resource: Microsoft.Windows.Developer/OsVersion
+      directives:
+        description: Require Windows 10 or later
+        allowPrerelease: true
+      settings:
+        MinVersion: "10.0.19041"
+
+  # resources: desired state
+  # Policy: the dev environment lives inside WSL. Keep the Windows side minimal
+  #         (editor, terminal, WSL itself). Git / Node / language runtimes are
+  #         managed inside the WSL distro with Nix via takuyaa/dotfiles
+  #         (Home Manager). See README "WSL distro init". This resource installs
+  #         the WSL feature only — distro + tooling are set up inside WSL.
+  resources:
+    # WSL itself (installs Ubuntu by default)
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: wsl
+      directives:
+        description: Install Windows Subsystem for Linux
+      settings:
+        id: Microsoft.WSL
+        source: winget
+
+    # A single VS Code on the Windows side; connect into WSL via the WSL extension.
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: vscode
+      directives:
+        description: Install Visual Studio Code (connect to WSL via the WSL extension)
+      settings:
+        id: Microsoft.VisualStudioCode
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: windows-terminal
+      directives:
+        description: Install Windows Terminal
+      settings:
+        id: Microsoft.WindowsTerminal
+        source: winget
+
+    # Git on the Windows side, only to clone / pull THIS dotfiles repo (the kanata
+    # config + this winget file live in it). Dev-time Git lives inside WSL via Nix.
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: git
+      directives:
+        description: Install Git for Windows (to pull this dotfiles repo)
+      settings:
+        id: Git.Git
+        source: winget
+
+    # Already-installed Chrome is detected and left as-is (no uninstall needed).
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: chrome
+      directives:
+        description: Install Google Chrome
+      settings:
+        id: Google.Chrome
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: onepassword
+      directives:
+        description: Install 1Password
+      settings:
+        id: AgileBits.1Password
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: powertoys
+      directives:
+        description: Install Microsoft PowerToys
+      settings:
+        id: Microsoft.PowerToys
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: discord
+      directives:
+        description: Install Discord
+      settings:
+        id: Discord.Discord
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: etcher
+      directives:
+        description: Install balenaEtcher
+      settings:
+        id: Balena.Etcher
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: slack
+      directives:
+        description: Install Slack
+      settings:
+        id: SlackTechnologies.Slack
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: claude
+      directives:
+        description: Install Claude desktop app
+      settings:
+        id: Anthropic.Claude
+        source: winget
+
+    # Google Japanese IME — robust key customization for the 英数/かな
+    # mode keys (Muhenkan = IME off, Henkan = ひらがな). See README for the
+    # exact key-setting steps to apply after install.
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: google-japanese-ime
+      directives:
+        description: Install Google Japanese IME
+      settings:
+        id: Google.JapaneseIME
+        source: winget
+
+    # kanata: advanced remapper for layers / tap-hold (e.g. Muhenkan layer).
+    # Config lives in kanata.kbd next to this file. Verify the id with
+    # `winget search kanata` if install fails.
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: kanata
+      directives:
+        description: Install kanata (GUI build — no console window, same CLI args)
+      settings:
+        id: jtroo.kanata_gui
+        source: winget
+
+    # ---- Keyboard customization ----
+    # Use the physical JP keyboard as a US layout by substituting the Japanese
+    # keyboard layout (00000411) with US (00000409) for the current user.
+    # This is layout-level (works on USB/HID), unlike the old i8042prt
+    # "LayerDriver JP106 = kbd101.dll" method which only affects PS/2 keyboards.
+    # Takes effect after sign-out / sign-in.
+    # (IME switching is handled by kanata emitting F13/F14 — layout-independent —
+    #  bound in keymap.txt; see kanata.kbd.)
+    - resource: PSDscResources/Registry
+      id: kbd-layout-us
+      directives:
+        description: Substitute the JP keyboard layout with US for this user
+      settings:
+        Key: HKEY_CURRENT_USER\Keyboard Layout\Substitutes
+        ValueName: "00000411"
+        ValueType: String
+        ValueData: "00000409"
+        Ensure: Present
+        Force: true
+
+    # Remap CapsLock (0x3A) -> Left Ctrl (0x1D) via a Scancode Map.
+    # Binary layout: 8-byte header, DWORD count (2 = 1 mapping + null),
+    # mapping WORD pair (to=1D00, from=3A00), 4-byte null terminator.
+    # Applies system-wide incl. the login screen; requires a reboot.
+    - resource: PSDscResources/Registry
+      id: kbd-scancode-map
+      directives:
+        description: Remap CapsLock to Left Ctrl
+      settings:
+        Key: HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Keyboard Layout
+        ValueName: Scancode Map
+        ValueType: Binary
+        ValueData: "0000000000000000020000001D003A0000000000"
+        Ensure: Present
+        Force: true
+
+    # Auto-start kanata at logon via a scheduled task.
+    # Runs as the current user with an interactive token (no stored password)
+    # and highest privileges, which kanata needs to install its keyboard hook.
+    # NOTE: if a game/app misbehaves while kanata runs elevated, change
+    #       -RunLevel Highest to Limited below and re-apply.
+    - resource: PSDscResources/Script
+      id: kanata-autostart
+      dependsOn:
+        - kanata
+      directives:
+        description: Register a logon scheduled task that starts kanata
+      settings:
+        GetScript: |
+          @{ Result = (Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue).TaskName }
+        TestScript: |
+          [bool](Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue)
+        SetScript: |
+          $exe = $null
+          # winget exposes the canonical command as a shim under Links.
+          $linkDirs = @("$env:LOCALAPPDATA\Microsoft\WinGet\Links", "$env:ProgramFiles\WinGet\Links")
+          foreach ($d in $linkDirs) {
+            if (Test-Path $d) {
+              $f = Get-ChildItem -Path $d -Filter 'kanata*.exe' -ErrorAction SilentlyContinue |
+                   Sort-Object { $_.Name -notmatch 'gui' } | Select-Object -First 1
+              if ($f) { $exe = $f.FullName; break }
+            }
+          }
+          # Fallback: search the extracted package payload, preferring a GUI build.
+          if (-not $exe) {
+            $pkgDirs = @("$env:LOCALAPPDATA\Microsoft\WinGet\Packages", "$env:ProgramFiles\WinGet\Packages")
+            foreach ($d in $pkgDirs) {
+              if (Test-Path $d) {
+                $f = Get-ChildItem -Path $d -Filter 'kanata*.exe' -Recurse -ErrorAction SilentlyContinue |
+                     Sort-Object { $_.Name -notmatch 'gui' } | Select-Object -First 1
+                if ($f) { $exe = $f.FullName; break }
+              }
+            }
+          }
+          if (-not $exe) { throw "kanata executable not found under WinGet package directories" }
+          $cfg = "C:\Users\takuy\dotfiles\windows\kanata.kbd"
+          $action    = New-ScheduledTaskAction -Execute $exe -Argument ('--cfg "{0}"' -f $cfg)
+          $trigger   = New-ScheduledTaskTrigger -AtLogOn
+          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          Register-ScheduledTask -TaskName 'kanata' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
