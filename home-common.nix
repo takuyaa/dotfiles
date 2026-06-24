@@ -186,6 +186,26 @@ in
         echo "…''${p: -$(( max - 1 ))}"
       fi
     '')
+
+    # tmux: floating fzf picker to jump to any window/pane (tcmux-like)
+    (writeShellScriptBin "tmux-jump" ''
+      ${pkgs.tmux}/bin/tmux list-panes -a -F \
+        '#{session_name}:#{window_index}.#{pane_index} [#{window_name}] #{pane_current_command} #{pane_current_path}	#{pane_id}' \
+      | ${pkgs.fzf}/bin/fzf \
+          --reverse \
+          --with-nth=1 \
+          --delimiter='\t' \
+          --prompt='jump > ' \
+          --preview='${pkgs.tmux}/bin/tmux capture-pane -ep -t {2}' \
+          --preview-window=right:60% \
+      | {
+          read -r line || exit 0
+          pane=$(printf '%s' "$line" | cut -f2)
+          ${pkgs.tmux}/bin/tmux switch-client -t "$pane"
+          ${pkgs.tmux}/bin/tmux select-window -t "$pane"
+          ${pkgs.tmux}/bin/tmux select-pane -t "$pane"
+        }
+    '')
   ];
 
   programs.bash = {
@@ -708,6 +728,9 @@ in
       # Pane splitting keybindings
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
+
+      # Floating picker: jump to any window/pane via fzf in a centered popup
+      bind j display-popup -w 80% -h 70% -E "tmux-jump"
 
       # Auto-balance panes on split/close: even-horizontal for <=3 panes, tiled for 4+
       # NOTE: after-kill-pane does not fire in tmux (the pane/context is destroyed),
