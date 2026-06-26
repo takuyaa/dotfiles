@@ -169,6 +169,14 @@ properties:
         id: Anthropic.Claude
         source: winget
 
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: spotify
+      directives:
+        description: Install Spotify
+      settings:
+        id: Spotify.Spotify
+        source: winget
+
     # Tailscale on the Windows host. Combined with networkingMode=mirrored in
     # .wslconfig (see the wslconfig resource below), this gives WSL access to the
     # tailnet, so `ssh dev` reaches the homelab over Tailscale. After install,
