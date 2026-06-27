@@ -237,7 +237,9 @@ in
       # User/IdentityFile via `ssh -G dev`. --telemetry=false: client defaults to on.
       # --terminal-path: et launches etterminal over a non-login ssh shell, which
       # lacks ~/.nix-profile/bin on PATH, so point at its absolute path on dev.
-      etdev = "et --telemetry=false --terminal-path /home/takuya-a/.nix-profile/bin/etterminal dev -c 'tmux new-session -A -s main'";
+      # `attach || new-session`: attach to the most-recent existing session
+      # regardless of name (new-session -A only matches the exact name "main").
+      etdev = "et --telemetry=false --terminal-path /home/takuya-a/.nix-profile/bin/etterminal dev -c 'tmux attach || tmux new-session -s main'";
 
       # Emacs
       e = "emacs";
