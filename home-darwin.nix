@@ -53,7 +53,9 @@
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       copy-on-select = "clipboard";
-      command = "bash -l -c 'tmux new-session -A -s main'";
+      # attach to the most-recent existing session regardless of name,
+      # else create "main" (new-session -A only matches the exact name "main")
+      command = "bash -l -c 'tmux attach || tmux new-session -s main'";
       confirm-close-surface = false;
     };
   };
