@@ -90,8 +90,9 @@ in
     # Network tools
     cloudflared
     curl
-    # eternal-terminal: reconnectable remote shell (client `et` + `etserver`);
-    # etserver is auto-started on login on the dev host (see home-linux.nix)
+    # eternal-terminal: reconnectable remote shell (client `et` + `etserver`).
+    # etserver is auto-started on login on the dev host (see home-linux.nix);
+    # connect from a client with the `etdev` command defined below.
     eternal-terminal
     grpcurl
     mtr
@@ -142,6 +143,23 @@ in
     # difit: GitHub-style local diff viewer
     (writeShellScriptBin "difit" ''
       exec ${pkgs.nodejs_22}/bin/npx --yes difit "$@"
+    '')
+
+    # etdev: connect to dev over Eternal Terminal (reconnectable) and land in its
+    # tmux. This is the ONLY thing that starts tmux on dev — `ssh dev` stays a raw
+    # shell. A real command (not a shell alias) so it also works non-interactively
+    # (terminal startup commands, scripts) and in any shell.
+    # - `et dev` resolves HostName/User/IdentityFile via `ssh -G dev`.
+    # - --telemetry=false: the et client defaults telemetry on.
+    # - --terminal-path: et launches etterminal over a non-login ssh shell that
+    #   lacks ~/.nix-profile/bin on PATH, so point at its absolute path on dev.
+    # - `attach || new-session`: attach to the most-recent existing session of any
+    #   name, else create "main" (new-session -A only matches the exact name).
+    (writeShellScriptBin "etdev" ''
+      exec ${pkgs.eternal-terminal}/bin/et \
+        --telemetry=false \
+        --terminal-path /home/takuya-a/.nix-profile/bin/etterminal \
+        dev -c 'tmux attach || tmux new-session -s main'
     '')
 
     # playwright-cli: Playwright CLI for coding agents
@@ -231,15 +249,6 @@ in
 
       # Nix
       flake-update = "nix flake update";
-
-      # Eternal Terminal: connect to dev (reconnectable) and attach the main tmux
-      # session, mirroring the macOS local autostart. `et dev` resolves HostName/
-      # User/IdentityFile via `ssh -G dev`. --telemetry=false: client defaults to on.
-      # --terminal-path: et launches etterminal over a non-login ssh shell, which
-      # lacks ~/.nix-profile/bin on PATH, so point at its absolute path on dev.
-      # `attach || new-session`: attach to the most-recent existing session
-      # regardless of name (new-session -A only matches the exact name "main").
-      etdev = "et --telemetry=false --terminal-path /home/takuya-a/.nix-profile/bin/etterminal dev -c 'tmux attach || tmux new-session -s main'";
 
       # Emacs
       e = "emacs";

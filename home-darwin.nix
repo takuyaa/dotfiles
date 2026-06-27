@@ -53,9 +53,8 @@
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       copy-on-select = "clipboard";
-      # attach to the most-recent existing session regardless of name,
-      # else create "main" (new-session -A only matches the exact name "main")
-      command = "bash -l -c 'tmux attach || tmux new-session -s main'";
+      # Open a plain login shell (no auto tmux). Connect to dev on demand with the
+      # `etdev` command, which is where tmux lives now (single tmux, on dev).
       confirm-close-surface = false;
     };
   };

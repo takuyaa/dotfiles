@@ -59,13 +59,9 @@
         --logdir "$HOME/.local/state/et" &> /dev/null || true
     fi
 
-    # Auto-attach tmux on interactive login: attach to the most-recent existing
-    # session, else create "main". Guards: only interactive shells ($- has i) so
-    # non-interactive ssh / scripts and et's `-c` bootstrap are unaffected (no
-    # conflict with the etdev alias), and only when not already inside tmux.
-    if [[ $- == *i* ]] && [ -z "$TMUX" ] && command -v tmux &> /dev/null; then
-      tmux attach || tmux new-session -s main
-    fi
+    # NOTE: tmux is intentionally NOT auto-started here. dev's tmux is launched
+    # only by the `etdev` command (its `tmux attach || new-session` -c), so a plain
+    # `ssh dev` stays a raw shell with no tmux.
   '';
 
   # SSH host settings
