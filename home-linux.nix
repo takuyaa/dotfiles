@@ -45,6 +45,19 @@
     if command -v npm &> /dev/null && [ ! -x "$HOME/.npm-global/bin/happy" ]; then
       npm install -g happy-coder
     fi
+
+    # Eternal Terminal server: this dev box is a container with no systemd user
+    # instance (PID 1 is sshd), so start etserver on login if not already running.
+    # Listens on TCP 2022, reachable only over the Tailscale tailnet. After a pod
+    # restart, one plain `ssh dev` bootstraps it; then `etdev` reconnects-survives.
+    # --pidfile/--logdir must point at a writable path: the default /var/run is
+    # root-only, so --daemon would abort here.
+    if command -v etserver &> /dev/null && ! pgrep -x etserver &> /dev/null; then
+      mkdir -p "$HOME/.local/state/et"
+      etserver --port 2022 --daemon \
+        --pidfile "$HOME/.local/state/et/etserver.pid" \
+        --logdir "$HOME/.local/state/et" &> /dev/null || true
+    fi
   '';
 
   # SSH host settings

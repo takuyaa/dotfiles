@@ -90,6 +90,9 @@ in
     # Network tools
     cloudflared
     curl
+    # eternal-terminal: reconnectable remote shell (client `et` + `etserver`);
+    # etserver is auto-started on login on the dev host (see home-linux.nix)
+    eternal-terminal
     grpcurl
     mtr
     nmap
@@ -228,6 +231,11 @@ in
 
       # Nix
       flake-update = "nix flake update";
+
+      # Eternal Terminal: connect to dev (reconnectable) and attach the main tmux
+      # session, mirroring the macOS local autostart. `et dev` resolves HostName/
+      # User/IdentityFile via `ssh -G dev`. --telemetry=false: client defaults to on.
+      etdev = "et --telemetry=false dev -c 'tmux new-session -A -s main'";
 
       # Emacs
       e = "emacs";
