@@ -235,7 +235,9 @@ in
       # Eternal Terminal: connect to dev (reconnectable) and attach the main tmux
       # session, mirroring the macOS local autostart. `et dev` resolves HostName/
       # User/IdentityFile via `ssh -G dev`. --telemetry=false: client defaults to on.
-      etdev = "et --telemetry=false dev -c 'tmux new-session -A -s main'";
+      # --terminal-path: et launches etterminal over a non-login ssh shell, which
+      # lacks ~/.nix-profile/bin on PATH, so point at its absolute path on dev.
+      etdev = "et --telemetry=false --terminal-path /home/takuya-a/.nix-profile/bin/etterminal dev -c 'tmux new-session -A -s main'";
 
       # Emacs
       e = "emacs";
