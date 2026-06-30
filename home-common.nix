@@ -54,6 +54,12 @@ let
       outputHash = "sha256-037Llh88/OsmhCXdJj5QQ+qMo5e+/d2HMdJx4HwiTrw=";
     });
   });
+
+  # Auto-balance panes: even-horizontal for <=3 panes, tiled for 4+.
+  # Shared by the split/exit hooks and the kill-pane binding so the layout
+  # logic stays in one place.
+  tmuxRebalanceLayout =
+    "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'";
 in
 {
   home.username = username;
@@ -753,11 +759,15 @@ in
       # Floating picker: jump to any window/pane via fzf in a centered popup
       bind j display-popup -w 80% -h 70% -E "tmux-jump"
 
-      # Auto-balance panes on split/close: even-horizontal for <=3 panes, tiled for 4+
+      # Auto-balance panes on split/close. The same rebalance logic
+      # (${tmuxRebalanceLayout}) runs from each trigger below.
+      #
       # NOTE: after-kill-pane does not fire in tmux (the pane/context is destroyed),
-      # so use pane-exited, which fires after a pane closes with the post-removal count.
-      set-hook -g after-split-window "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
-      set-hook -g pane-exited        "if-shell -F '#{<=:#{window_panes},3}' 'select-layout even-horizontal' 'select-layout tiled'"
+      # and pane-exited only fires when the pane's program exits (e.g. `exit`), NOT
+      # on kill-pane. So the `x` binding has to call the rebalance explicitly.
+      set-hook -g after-split-window "${tmuxRebalanceLayout}"
+      set-hook -g pane-exited        "${tmuxRebalanceLayout}"
+      bind x confirm-before -p "kill-pane #P? (y/n)" "kill-pane ; ${tmuxRebalanceLayout}"
 
       # Cyclic pane navigation: next/prev pane (repeatable)
       bind -r C-n select-pane -t :.+
