@@ -765,9 +765,17 @@ in
       # NOTE: after-kill-pane does not fire in tmux (the pane/context is destroyed),
       # and pane-exited only fires when the pane's program exits (e.g. `exit`), NOT
       # on kill-pane. So the `x` binding has to call the rebalance explicitly.
+      #
+      # The rebalance MUST be a { } command block, not "kill-pane ; ...": inside
+      # confirm-before a single quoted string only runs the first ; -separated
+      # command (kill-pane), silently dropping the rebalance — so 4->3 kept tmux's
+      # default lopsided split instead of the even-horizontal 3-way we want.
       set-hook -g after-split-window "${tmuxRebalanceLayout}"
       set-hook -g pane-exited        "${tmuxRebalanceLayout}"
-      bind x confirm-before -p "kill-pane #P? (y/n)" "kill-pane ; ${tmuxRebalanceLayout}"
+      bind x confirm-before -p "kill-pane #P? (y/n)" {
+        kill-pane
+        ${tmuxRebalanceLayout}
+      }
 
       # Cyclic pane navigation: next/prev pane (repeatable)
       bind -r C-n select-pane -t :.+
