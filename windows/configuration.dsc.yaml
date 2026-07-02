@@ -140,17 +140,42 @@ properties:
         id: Discord.Discord
         source: winget
 
-    # MTGA (WizardsoftheCoast.MTGALauncher) is intentionally NOT installed as a
-    # WinGetPackage resource. winget's version detection for the launcher never
-    # matches, so a `WinGetPackage` unit is judged non-compliant on every run and
-    # re-executes the installer -- which auto-launches the game. That popped MTGA
-    # open on every `winget configure`. Install it once by hand instead:
-    #   winget install --id WizardsoftheCoast.MTGALauncher -e
-    # It self-updates in-client on launch, so it never needs winget to manage it.
-    #
-    # The pin below additionally keeps `winget upgrade --all` from re-running the
-    # installer (same auto-launch problem via the upgrade path). Update MTGA via
-    # winget only deliberately with `winget upgrade --all --include-pinned`.
+    # MTGA (WizardsoftheCoast.MTGALauncher) is deliberately NOT a WinGetPackage
+    # resource. winget's install detection for the launcher never correlates, so
+    # a WinGetPackage unit is judged non-compliant on every run and re-executes
+    # the installer -- which auto-launches the game, popping MTGA open on every
+    # `winget configure`. Instead we install it exactly once, gated by a marker
+    # file: the first configure on a fresh machine installs MTGA and drops a
+    # sentinel; every later run sees the sentinel and does nothing. The marker
+    # (not winget's flaky detection) is the source of truth, so the relaunch loop
+    # cannot recur. Delete the marker to force a reinstall. On a machine where
+    # MTGA is already installed, seed the marker by hand so this never runs the
+    # installer there:
+    #   $m = Join-Path $env:LOCALAPPDATA 'dotfiles\mtga-installed.marker'
+    #   New-Item -ItemType Directory -Force (Split-Path $m); Set-Content $m installed
+    - resource: PSDscResources/Script
+      id: mtga-install
+      directives:
+        description: Install MTGA once (marker-gated so configure never relaunches it)
+      settings:
+        GetScript: |
+          $marker = Join-Path $env:LOCALAPPDATA 'dotfiles\mtga-installed.marker'
+          @{ Result = (Test-Path $marker).ToString() }
+        TestScript: |
+          $marker = Join-Path $env:LOCALAPPDATA 'dotfiles\mtga-installed.marker'
+          Test-Path $marker
+        SetScript: |
+          winget install --id WizardsoftheCoast.MTGALauncher -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+          # 0 = just installed; -1978335189 = already installed (no update applicable).
+          if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq -1978335189) {
+            $marker = Join-Path $env:LOCALAPPDATA 'dotfiles\mtga-installed.marker'
+            New-Item -ItemType Directory -Force -Path (Split-Path $marker) | Out-Null
+            Set-Content -Path $marker -Value 'installed'
+          }
+
+    # The pin keeps `winget upgrade --all` from re-running the installer too (same
+    # auto-launch problem via the upgrade path). Update MTGA deliberately with
+    # `winget upgrade --all --include-pinned`; it also self-updates in-client.
     - resource: PSDscResources/Script
       id: mtga-pin
       directives:
