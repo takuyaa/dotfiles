@@ -75,7 +75,12 @@ git pull
 
 - **アプリ（winget）:** WSL、VS Code、Windows Terminal、Git（この dotfiles の
   pull 用）、Chrome、1Password、PowerToys、Discord、balenaEtcher、Slack、
-  Tailscale、Google 日本語入力、kanata。
+  Tailscale、Google 日本語入力、kanata、Steam。
+  - **MTGA は管理対象外**（自動インストールしません）。`WinGetPackage` にすると
+    毎回インストーラが再実行されて本体が起動してしまう（winget が検出できない）ため。
+    新マシンでは手動で一度だけ入れてください: `winget install --id WizardsoftheCoast.MTGALauncher -e`。
+    起動時にクライアント内で自己更新するので winget で管理する必要はありません。なお
+    `mtga-pin` で `winget upgrade --all` の対象からは除外しています。
 - **WSL の mirrored ネットワーク:** `windows/wslconfig` を `%UserProfile%\.wslconfig`
   に配置し、`networkingMode=mirrored` にします。WSL が Windows のネットワーク
   スタックを共有するので、Windows 側の Tailscale 経由で WSL から tailnet（`100.x`）
