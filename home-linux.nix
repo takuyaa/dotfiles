@@ -15,10 +15,19 @@
     terraform
 
     # Japanese slide fonts & pptx→PDF pipeline (see fonts/biz-udp/README.md).
-    # Deck font BIZ UDPGothic is vendored + placed via home.file below; Noto is the
-    # fallback insurance (family "Noto Sans CJK JP" — NOT the Google Fonts
-    # "Noto Sans JP", which is a different family). libreoffice/poppler are the
-    # heavy downloads flagged for wifi; `soffice` converts, `pdffonts` verifies.
+    # Deck font BIZ UDPGothic is vendored and shipped as a package below (NOT via
+    # home.file into ~/.local/share/fonts — Nix's fontconfig, which Nix LibreOffice
+    # uses, only scans the profile's share/fonts, so a font dropped in the XDG dir
+    # is invisible to soffice and gets silently substituted). Noto is the fallback
+    # insurance (family "Noto Sans CJK JP" — NOT the Google Fonts "Noto Sans JP",
+    # a different family). libreoffice/poppler are heavy downloads (wifi):
+    # `soffice` converts, `pdffonts` verifies.
+    (runCommand "biz-udpgothic-fonts" { } ''
+      install -Dm644 ${./fonts/biz-udp/BIZUDPGothic-Regular.ttf} \
+        $out/share/fonts/truetype/BIZUDPGothic-Regular.ttf
+      install -Dm644 ${./fonts/biz-udp/BIZUDPGothic-Bold.ttf} \
+        $out/share/fonts/truetype/BIZUDPGothic-Bold.ttf
+    '')
     noto-fonts-cjk-sans
     libreoffice
     poppler-utils
@@ -33,7 +42,11 @@
 
       # Preflight: require the deck font in the font cache. Without it soffice
       # silently substitutes and bakes the wrong glyphs permanently into the PDF.
-      if ! ${pkgs.fontconfig}/bin/fc-list | grep -qi 'BIZ UDPGothic'; then
+      # Capture fc-list first, then match with a here-string: piping into `grep -q`
+      # under `set -o pipefail` reports failure when grep closes the pipe early and
+      # fc-list dies of SIGPIPE, which would wrongly trip this check.
+      installed_fonts="$(${pkgs.fontconfig}/bin/fc-list || true)"
+      if ! grep -qi 'BIZ UDPGothic' <<<"$installed_fonts"; then
         echo "❌ BIZ UDPGothic が見つかりません。フォント未導入の環境では変換しません（サイレント置換防止）。" >&2
         echo "   'rebuild' でフォントを導入してから再実行してください。" >&2
         exit 1
@@ -87,12 +100,16 @@
     '')
   ];
 
-  # Vendored BIZ UDPGothic → user font dir; fontconfig picks it up after fc-cache.
+  # pip-installed native wheels (e.g. numpy, PyMuPDF used by ppt-master) link
+  # against libstdc++.so.6, which Nix's Python does not put on the dynamic
+  # loader's search path. Expose the gcc runtime libs so those wheels import.
+  # libstdc++ is backward-compatible, so shadowing other apps' copy is harmless.
+  home.sessionVariables.LD_LIBRARY_PATH =
+    "${pkgs.stdenv.cc.cc.lib}/lib\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}";
+
+  # Build the fontconfig cache for profile fonts (the BIZ UDPGothic package above
+  # and noto-fonts-cjk-sans) so Nix apps like LibreOffice resolve them.
   fonts.fontconfig.enable = true;
-  home.file.".local/share/fonts/BIZUDPGothic-Regular.ttf".source =
-    ./fonts/biz-udp/BIZUDPGothic-Regular.ttf;
-  home.file.".local/share/fonts/BIZUDPGothic-Bold.ttf".source =
-    ./fonts/biz-udp/BIZUDPGothic-Bold.ttf;
 
   # code-server systemd user service
   systemd.user.services.code-server = {
