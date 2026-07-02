@@ -140,23 +140,19 @@ properties:
         id: Discord.Discord
         source: winget
 
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: mtga
-      directives:
-        description: Install Magic The Gathering Arena launcher
-      settings:
-        id: WizardsoftheCoast.MTGALauncher
-        source: winget
-
-    # Pin MTGA so `winget upgrade --all` skips it. The MTGALauncher installer
-    # auto-launches the game when winget upgrades it, which pops MTGA open on
-    # every routine `winget upgrade` run. Pinning excludes it from --all (use
-    # `winget upgrade --all --include-pinned` to update it deliberately). No real
-    # downside: MTGA self-updates in-client on launch, so winget never needs to.
+    # MTGA (WizardsoftheCoast.MTGALauncher) is intentionally NOT installed as a
+    # WinGetPackage resource. winget's version detection for the launcher never
+    # matches, so a `WinGetPackage` unit is judged non-compliant on every run and
+    # re-executes the installer -- which auto-launches the game. That popped MTGA
+    # open on every `winget configure`. Install it once by hand instead:
+    #   winget install --id WizardsoftheCoast.MTGALauncher -e
+    # It self-updates in-client on launch, so it never needs winget to manage it.
+    #
+    # The pin below additionally keeps `winget upgrade --all` from re-running the
+    # installer (same auto-launch problem via the upgrade path). Update MTGA via
+    # winget only deliberately with `winget upgrade --all --include-pinned`.
     - resource: PSDscResources/Script
       id: mtga-pin
-      dependsOn:
-        - mtga
       directives:
         description: Pin MTGA so winget upgrade does not relaunch it
       settings:
