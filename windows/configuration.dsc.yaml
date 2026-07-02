@@ -137,6 +137,26 @@ properties:
         id: WizardsoftheCoast.MTGALauncher
         source: winget
 
+    # Pin MTGA so `winget upgrade --all` skips it. The MTGALauncher installer
+    # auto-launches the game when winget upgrades it, which pops MTGA open on
+    # every routine `winget upgrade` run. Pinning excludes it from --all (use
+    # `winget upgrade --all --include-pinned` to update it deliberately). No real
+    # downside: MTGA self-updates in-client on launch, so winget never needs to.
+    - resource: PSDscResources/Script
+      id: mtga-pin
+      dependsOn:
+        - mtga
+      directives:
+        description: Pin MTGA so winget upgrade does not relaunch it
+      settings:
+        GetScript: |
+          @{ Result = (winget pin list --id WizardsoftheCoast.MTGALauncher -e --disable-interactivity 2>$null | Out-String) }
+        TestScript: |
+          $out = (winget pin list --id WizardsoftheCoast.MTGALauncher -e --disable-interactivity 2>$null | Out-String)
+          [bool]($out -match 'WizardsoftheCoast\.MTGALauncher')
+        SetScript: |
+          winget pin add --id WizardsoftheCoast.MTGALauncher -e --accept-source-agreements --disable-interactivity | Out-Null
+
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: steam
       directives:
