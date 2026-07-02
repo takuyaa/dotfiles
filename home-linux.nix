@@ -21,7 +21,7 @@
     # heavy downloads flagged for wifi; `soffice` converts, `pdffonts` verifies.
     noto-fonts-cjk-sans
     libreoffice
-    poppler_utils
+    poppler-utils
 
     # pptx2pdf: convert a deck to PDF in a font-installed environment and verify
     # every font is embedded, so distributed PDFs render identically on machines
@@ -75,7 +75,7 @@
 
         # Verify every font is embedded. pdffonts' "emb" column is the 4th field;
         # a subset embed shows emb=yes,sub=yes so this passes it too.
-        if ${pkgs.poppler_utils}/bin/pdffonts "$pdf" | tail -n +3 \
+        if ${pkgs.poppler-utils}/bin/pdffonts "$pdf" | tail -n +3 \
             | awk '$4=="no"{print "  NOT EMBEDDED:",$0; bad=1} END{exit bad+0}'; then
           echo "✅ 埋め込みOK: $pdf"
         else
