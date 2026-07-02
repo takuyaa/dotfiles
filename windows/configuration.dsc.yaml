@@ -322,6 +322,53 @@ properties:
         Ensure: Present
         Force: true
 
+    # Disable the input-language / keyboard-layout switch hotkeys so the IME
+    # stops flipping to a stray "日本語 (US)" layout by accident.
+    # HKCU\Keyboard Layout\Toggle: value "3" = disabled for each of
+    #   Language Hotkey (左Alt+Shift) / Layout Hotkey (Ctrl+Shift) / Hotkey.
+    # Windows keeps the Japanese language's base keyboard layout (00000411)
+    # around no matter what -- Set-WinUserLanguageList re-adds it on sign-in --
+    # so we lock switching down instead of trying to delete that entry.
+    # Win+Space still cycles manually; kill the remaining accidental path via
+    # Settings -> 入力 -> キーボードの詳細設定: uncheck "アプリウィンドウごとに
+    # 異なる入力方式を設定する" and set 既定の入力方式の上書き = Google日本語入力
+    # (per-user UI state, not captured here). Takes effect after sign-in.
+    - resource: PSDscResources/Registry
+      id: kbd-toggle-language-hotkey
+      directives:
+        description: Disable the input-language switch hotkey (Alt+Shift)
+      settings:
+        Key: HKEY_CURRENT_USER\Keyboard Layout\Toggle
+        ValueName: Language Hotkey
+        ValueType: String
+        ValueData: "3"
+        Ensure: Present
+        Force: true
+
+    - resource: PSDscResources/Registry
+      id: kbd-toggle-layout-hotkey
+      directives:
+        description: Disable the keyboard-layout switch hotkey (Ctrl+Shift)
+      settings:
+        Key: HKEY_CURRENT_USER\Keyboard Layout\Toggle
+        ValueName: Layout Hotkey
+        ValueType: String
+        ValueData: "3"
+        Ensure: Present
+        Force: true
+
+    - resource: PSDscResources/Registry
+      id: kbd-toggle-hotkey
+      directives:
+        description: Disable the legacy input-switch hotkey
+      settings:
+        Key: HKEY_CURRENT_USER\Keyboard Layout\Toggle
+        ValueName: Hotkey
+        ValueType: String
+        ValueData: "3"
+        Ensure: Present
+        Force: true
+
     # Auto-start kanata at logon via a scheduled task.
     # Runs as the current user with an interactive token (no stored password)
     # and highest privileges, which kanata needs to install its keyboard hook.
