@@ -96,6 +96,17 @@ properties:
           & $git config --global user.name  'Takuya Asano'
           & $git config --global user.email 'takuya.a@gmail.com'
 
+    # Python on the Windows host. Language runtimes normally live in WSL (see
+    # the policy note above), but this one is installed on Windows for scripts
+    # that must run against the Windows environment (native paths, Win32 APIs).
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: python
+      directives:
+        description: Install Python 3.13
+      settings:
+        id: Python.Python.3.13
+        source: winget
+
     # Already-installed Chrome is detected and left as-is (no uninstall needed).
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: chrome
