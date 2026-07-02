@@ -107,6 +107,53 @@ properties:
         id: Python.Python.3.13
         source: winget
 
+    # Japanese deck font (BIZ UDPGothic) for pptx/PDF consistency with WSL2.
+    # Per-user install (no admin): copy the vendored TTFs into the per-user font
+    # dir and register them under HKCU, so LibreOffice / PowerPoint-for-web /
+    # Quick Look on this host resolve the same family as the WSL2 converter.
+    # Source path assumes the repo is at C:\Users\takuy\dotfiles (same as kanata).
+    # The fallback Noto Sans CJK JP is intentionally NOT installed here — the
+    # authoritative PDF conversion runs on WSL2, which has both fonts via Nix.
+    - resource: PSDscResources/Script
+      id: fonts-biz-udp
+      directives:
+        description: Install vendored BIZ UDPGothic (per-user)
+      settings:
+        GetScript: |
+          $reg = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
+          @{ Result = (Get-ItemProperty -Path $reg -ErrorAction SilentlyContinue | Out-String) }
+        TestScript: |
+          $fontDir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+          $reg = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
+          $fonts = @{
+            'BIZ UDPGothic (TrueType)'      = 'BIZUDPGothic-Regular.ttf'
+            'BIZ UDPGothic Bold (TrueType)' = 'BIZUDPGothic-Bold.ttf'
+          }
+          foreach ($name in $fonts.Keys) {
+            $dest = Join-Path $fontDir $fonts[$name]
+            if (-not (Test-Path $dest)) { return $false }
+            $val = (Get-ItemProperty -Path $reg -Name $name -ErrorAction SilentlyContinue).$name
+            if ($val -ne $dest) { return $false }
+          }
+          return $true
+        SetScript: |
+          $srcDir  = 'C:\Users\takuy\dotfiles\fonts\biz-udp'
+          $fontDir = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+          $reg = 'HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
+          New-Item -ItemType Directory -Path $fontDir -Force | Out-Null
+          if (-not (Test-Path $reg)) { New-Item -Path $reg -Force | Out-Null }
+          $fonts = @{
+            'BIZ UDPGothic (TrueType)'      = 'BIZUDPGothic-Regular.ttf'
+            'BIZ UDPGothic Bold (TrueType)' = 'BIZUDPGothic-Bold.ttf'
+          }
+          foreach ($name in $fonts.Keys) {
+            $src  = Join-Path $srcDir $fonts[$name]
+            $dest = Join-Path $fontDir $fonts[$name]
+            if (-not (Test-Path $src)) { throw "font source not found: $src (is the repo at C:\Users\takuy\dotfiles?)" }
+            Copy-Item -Path $src -Destination $dest -Force
+            New-ItemProperty -Path $reg -Name $name -Value $dest -PropertyType String -Force | Out-Null
+          }
+
     # Already-installed Chrome is detected and left as-is (no uninstall needed).
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: chrome

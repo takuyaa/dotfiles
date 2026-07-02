@@ -8,6 +8,9 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `rebuild` — apply configuration changes (delegates to the Makefile)
 - `update` — update flake inputs, then rebuild
 - `nix flake check` — validate the configuration
+- `pptx2pdf [-o OUTDIR] deck.pptx …` (Linux/WSL2) — convert a slide deck to PDF with
+  LibreOffice headless and verify every font is embedded; refuses to run if the deck
+  font `BIZ UDPGothic` is missing, to prevent silent glyph substitution
 
 ## Layout
 
@@ -16,6 +19,7 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `home-common.nix` — packages, dotfiles, and shell config shared by all hosts
 - `home-darwin.nix` / `home-linux.nix` — OS-specific overrides
 - `windows/` — Windows host config (winget DSC + kanata + Google Japanese IME); applied with `winget configure`, not Nix
+- `fonts/biz-udp/` — vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) shared by both OSes; installed via `home-linux.nix` (Nix) and `windows/configuration.dsc.yaml` (DSC)
 
 Roll back a bad macOS rebuild with `darwin-rebuild switch --rollback`.
 

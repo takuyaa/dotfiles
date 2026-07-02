@@ -81,6 +81,13 @@ git pull
     新マシンでは手動で一度だけ入れてください: `winget install --id WizardsoftheCoast.MTGALauncher -e`。
     起動時にクライアント内で自己更新するので winget で管理する必要はありません。なお
     `mtga-pin` で `winget upgrade --all` の対象からは除外しています。
+- **日本語デッキフォント（BIZ UDPGothic）:** `fonts-biz-udp` タスクが、リポジトリに
+  vendor した `fonts/biz-udp/*.ttf`（タグ `v1.051` にピン）を per-user（管理者不要）で
+  `%LOCALAPPDATA%\Microsoft\Windows\Fonts` にコピーし、`HKCU` のフォントレジストリに
+  登録します。ソースパスは `C:\Users\takuy\dotfiles` 前提。これで LibreOffice /
+  PowerPoint for the web / Quick Look が WSL2 の変換環境と同じファミリを解決します。
+  フォールバックの Noto Sans CJK JP は Windows には入れません（PDF 変換の正は
+  WSL2。WSL2 側は Nix の `noto-fonts-cjk-sans` で両フォントを導入済み）。
 - **WSL の mirrored ネットワーク:** `windows/wslconfig` を `%UserProfile%\.wslconfig`
   に配置し、`networkingMode=mirrored` にします。WSL が Windows のネットワーク
   スタックを共有するので、Windows 側の Tailscale 経由で WSL から tailnet（`100.x`）
