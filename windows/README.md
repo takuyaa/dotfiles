@@ -222,6 +222,14 @@ Start-ScheduledTask -TaskName kanata
 Ctrl として効くこと。kanata を昇格実行中にゲーム/アプリが誤作動する場合は、
 自動起動スクリプトの `-RunLevel Highest` を `Limited` に変えて再適用してください。
 
+スリープ復帰で kanata のフックが外れ、無変換・変換による IME オフ・オンが効かなく
+なることがあります（LLHOOK 版の既知バグ [jtroo/kanata#1307](https://github.com/jtroo/kanata/issues/1307)）。
+このとき kanata プロセスは生きたままキー横取りだけ止まるため、無変換 + `q` ホールドも
+`1` にならなくなります。復旧は `Stop-ScheduledTask -TaskName kanata; Start-ScheduledTask
+-TaskName kanata`。これを自動化するため、復帰イベント（Power-Troubleshooter EventID 1）で
+kanata を再起動する "kanata-resume" タスクを `configuration.dsc.yaml` で登録しています。
+登録確認は `Get-ScheduledTask -TaskName kanata-resume`。
+
 ## 手動の後処理ステップ 4: WSL ディストロの初期化
 
 `Microsoft.WSL` は WSL 機能を入れるだけで、開発環境そのものは

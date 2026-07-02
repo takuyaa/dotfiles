@@ -301,6 +301,45 @@ properties:
           $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
           Register-ScheduledTask -TaskName 'kanata' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 
+    # Restart kanata whenever the system resumes from sleep/hibernate.
+    # kanata's LLHOOK keyboard hook can silently detach on resume (upstream bug
+    # jtroo/kanata#1307, still open). When it does, the process keeps running but
+    # stops intercepting keys -- so Muhenkan/Henkan no longer toggle the IME,
+    # because they only reach the IME as F13/F14 emitted by kanata; the raw
+    # scancodes are dead under the US layout (see kanata.kbd, defcfg comment).
+    # A clean Stop -> Start re-installs the hook. This registers a second task,
+    # 'kanata-resume', fired by the Power-Troubleshooter "resumed from sleep"
+    # event (System log, EventID 1), that restarts the main 'kanata' task after a
+    # short settle delay. New-ScheduledTaskTrigger has no event-trigger form, so
+    # the trigger is built as an MSFT_TaskEventTrigger CIM instance with an XPath
+    # subscription (the standard workaround).
+    - resource: PSDscResources/Script
+      id: kanata-resume-restart
+      dependsOn:
+        - kanata-autostart
+      directives:
+        description: Register a scheduled task that restarts kanata on resume from sleep
+      settings:
+        GetScript: |
+          @{ Result = (Get-ScheduledTask -TaskName 'kanata-resume' -ErrorAction SilentlyContinue).TaskName }
+        # Self-heal if the task is missing or its action no longer restarts kanata.
+        TestScript: |
+          $t = Get-ScheduledTask -TaskName 'kanata-resume' -ErrorAction SilentlyContinue
+          if (-not $t) { return $false }
+          [bool]($t.Actions | Where-Object { $_.Arguments -like '*Start-ScheduledTask -TaskName kanata*' })
+        SetScript: |
+          $cmd = 'Start-Sleep -Seconds 5; Stop-ScheduledTask -TaskName kanata -ErrorAction SilentlyContinue; Start-ScheduledTask -TaskName kanata'
+          $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -Command "{0}"' -f $cmd)
+          # Event trigger: System log, Microsoft-Windows-Power-Troubleshooter, EventID 1
+          # ("The system has resumed from sleep"). Fires on resume from sleep/hibernate.
+          $class   = Get-CimClass -Namespace ROOT\Microsoft\Windows\TaskScheduler -ClassName MSFT_TaskEventTrigger
+          $trigger = New-CimInstance -CimClass $class -ClientOnly
+          $trigger.Enabled = $true
+          $trigger.Subscription = "<QueryList><Query Id='0' Path='System'><Select Path='System'>*[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and (EventID=1)]]</Select></Query></QueryList>"
+          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          Register-ScheduledTask -TaskName 'kanata-resume' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+
     # ---- WSL networking ----
     # Deploy .wslconfig (networkingMode=mirrored) from this repo to %UserProfile%.
     # WSL only reads it from the fixed path %UserProfile%\.wslconfig, so we copy
