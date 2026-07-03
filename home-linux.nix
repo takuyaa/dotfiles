@@ -98,6 +98,13 @@
       done
       exit $rc
     '')
+
+    # Chromium + its runtime libs (RPATH-resolved) for ppt-master's opt-in
+    # `visual-review` workflow, which renders each SVG page headless via
+    # Playwright. Pairs with PLAYWRIGHT_BROWSERS_PATH below; the slides repo pins
+    # its pip `playwright` to this driver's version. Avoids listing ~20 raw libs
+    # (libnspr4/libnss3/…) or running `sudo playwright install-deps`.
+    playwright-driver.browsers
   ];
 
   # pip-installed native wheels (e.g. numpy, PyMuPDF used by ppt-master) link
@@ -106,6 +113,13 @@
   # libstdc++ is backward-compatible, so shadowing other apps' copy is harmless.
   home.sessionVariables.LD_LIBRARY_PATH =
     "${pkgs.stdenv.cc.cc.lib}/lib\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}";
+
+  # Point the pip-installed Playwright (ppt-master `visual-review`) at the
+  # Nix-provided browsers, which ship with their runtime libs already resolved,
+  # so Chromium launches without `playwright install` or extra system libraries.
+  # Keep the slides repo's pip `playwright` pinned to pkgs.playwright-driver.version.
+  home.sessionVariables.PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+  home.sessionVariables.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
 
   # Build the fontconfig cache for profile fonts (the BIZ UDPGothic package above
   # and noto-fonts-cjk-sans) so Nix apps like LibreOffice resolve them.
