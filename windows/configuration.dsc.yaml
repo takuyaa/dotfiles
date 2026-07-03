@@ -369,6 +369,26 @@ properties:
         Ensure: Present
         Force: true
 
+    # Pin Google日本語入力 as the default input method (既定の入力方式の上書き).
+    # After a fullscreen game (exclusive fullscreen) disables the IME and
+    # Windows re-associates input, this override makes the focus fall back to
+    # Google IME instead of a bare "英語 (米国)/US" layout. The value is the
+    # Google IME text-service TIP: 0411:{lang-GUID}{profile-GUID}. It points at
+    # the ja language + Google IME set up in Settings (per-user UI state); this
+    # only records the *default*, so the language itself must already be added.
+    # Mirrors Set-WinDefaultInputMethodOverride. Takes effect after sign-in.
+    - resource: PSDscResources/Registry
+      id: ime-default-override
+      directives:
+        description: Set Google Japanese IME as the default input method
+      settings:
+        Key: HKEY_CURRENT_USER\Control Panel\International\User Profile
+        ValueName: InputMethodOverride
+        ValueType: String
+        ValueData: "0411:{D5A86FD5-5308-47EA-AD16-9C4EB160EC3C}{773EB24E-CA1D-4B1B-B420-FA985BB0B80D}"
+        Ensure: Present
+        Force: true
+
     # Auto-start kanata at logon via a scheduled task.
     # Runs as the current user with an interactive token (no stored password)
     # and highest privileges, which kanata needs to install its keyboard hook.
