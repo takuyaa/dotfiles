@@ -78,6 +78,25 @@ make update
 
 Or use the `rebuild` / `flake-update` shell aliases directly.
 
+## Japanese slides → PDF pipeline
+
+日本語スライド（ppt-master 等で生成した `.pptx`）を、他人の環境でも字形が崩れない
+PDF として配布するためのフォント整備と変換ツール。
+
+- **デッキ主フォント `BIZ UDPGothic`**（SIL OFL, 埋め込み可）を `fonts/biz-udp/` に
+  バージョン固定で vendor し、両 OS へ同一実体を配る。フォールバックは `Noto Sans CJK JP`。
+  - **Linux/WSL2**: `home-linux.nix` が Nix パッケージとして導入（`rebuild` で反映）。
+    Nix の fontconfig（LibreOffice が使う）はプロファイルの `share/fonts` しか見ないため、
+    `~/.local/share/fonts` ではなくパッケージで配る。詳細は [`fonts/biz-udp/README.md`](fonts/biz-udp/README.md)。
+  - **Windows**: `windows/configuration.dsc.yaml` の `fonts-biz-udp` が per-user 登録。
+- **`pptx2pdf [-o OUTDIR] deck.pptx …`**（Linux/WSL2、`home-linux.nix` 定義）:
+  LibreOffice headless で PDF 化し、`pdffonts` で全フォントの埋め込みを検証する。
+  `BIZ UDPGothic` が無ければ即 fail（サイレント置換を防ぐ）。
+
+```bash
+pptx2pdf slides/deck.pptx     # → slides/deck.pdf（全フォント emb=yes を検証）
+```
+
 ## File Structure
 
 ```text
@@ -88,6 +107,8 @@ Or use the `rebuild` / `flake-update` shell aliases directly.
 ├── home-common.nix   # Shared user config (packages, bash, git, tmux, etc.)
 ├── home-darwin.nix   # macOS-specific config (imports home-common.nix)
 ├── home-linux.nix    # Linux-specific config (imports home-common.nix)
+├── windows/          # Windows host config (winget DSC + kanata + Google IME); `winget configure`, not Nix
+├── fonts/biz-udp/    # Vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) for WSL2 + Windows
 ├── Makefile          # Platform-aware rebuild/update targets
 ├── install-darwin.sh  # macOS bootstrap script
 ├── install-linux.sh  # Linux bootstrap script
