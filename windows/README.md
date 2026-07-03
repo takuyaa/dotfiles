@@ -123,7 +123,7 @@ git pull
 
 | キー | タップ | ホールド |
 |-----|--------|----------|
-| 無変換（スペース左） | F13（→ 英数 / IME OFF） | **右 Ctrl**（押している間、任意キー = Ctrl+任意キー） |
+| 無変換（スペース左） | F13（→ 英数 / IME OFF） | **MH レイヤー**（任意キー = 右 Ctrl+任意キー、Tab = super-alt-tab） |
 | 変換（スペース右）   | F14（→ かな / IME ON）  | NUMS レイヤー: `q w e … p` → `1 2 … 0`、`1 2 … 0` → `F1 F2 … F10`、`h j k l` → 矢印、`n m , .` → Home/PgDn/PgUp/End |
 
 タップは Muhenkan/Henkan ではなく **F13 / F14**（レイアウト非依存）を送ります。
@@ -165,8 +165,9 @@ Shift+End→Shift+Delete（行末まで切り取り）や Enter→Left（行を�
 
 奪われた Ctrl ショートカット（全選択など）は **無変換キーを押しながら**取り戻せます。
 無変換は親指ホームポジションで、Win キーより届きやすく常用に向きます。無変換ホールドは
-レイヤーを切り替えずに単に **右 Ctrl** を押した状態にするので、列挙なしで
-`無変換+a〜z`、`無変換+1〜9`（タブ切替）など Ctrl 系すべてが効きます。
+MH レイヤーを有効化し、各キーを **右 Ctrl+そのキー** に割り当てるので、
+`無変換+a〜z`、`無変換+1〜9`（タブ切替）など Ctrl 系が効きます。Tab だけは例外で、
+Alt を保持したままウィンドウを切り替える **super-alt-tab**（下記）になります。
 
 | 無変換 + | 動作 |
 |---------|------|
@@ -178,15 +179,39 @@ Shift+End→Shift+Delete（行末まで切り取り）や Enter→Left（行を�
 | `s` | Ctrl+S（保存） |
 | `1`〜`9` | Ctrl+1〜9（タブ切替など） |
 | `[` / `]` | **Alt+Left / Alt+Right**（ブラウザ・Explorer・VSCode 等の back / forward） |
+| `Tab` | **super-alt-tab**（Alt+Tab のウィンドウ切替。下記） |
 | 任意キー | Ctrl+任意キー |
 
-右 Ctrl で発火するのは、左 Ctrl ベースの defoverrides（Ctrl+a→Home など）に
+各キーを右 Ctrl で出すのは、左 Ctrl ベースの defoverrides（Ctrl+a→Home など）に
 横取りされないため。無変換+a は Select All のままで、Home にはなりません。
 
 `[` / `]` は例外で、defoverrides で `(rctl [)` / `(rctl ])` を Alt+Left / Alt+Right に
 置換しています（macOS の Cmd+[ / Cmd+] に近い指の動きで browser back / forward）。
 代償として 無変換+[ から Esc（Ctrl+[ = ASCII 0x1B）が出なくなるので、Esc は物理キーか
 **左 Ctrl+[**（こちらは defoverrides で Esc 化済み）で取ります。
+
+#### 無変換+Tab＝super-alt-tab（Cmd+Tab 相当）
+
+`無変換+Tab` は macOS の Cmd+Tab と同じ操作感でウィンドウを切り替えます。
+
+- **無変換を押しっぱなしで Tab を連打** → Alt を握ったまま Tab を送るので、3 枚以上先まで
+  連続してサイクルできます。
+- **無変換を離す** → その時点のウィンドウで確定。
+- **無変換+Shift+Tab** → Alt+Shift+Tab（逆順サイクル）。
+
+仕組み: 仮想キー `vkalt`（= 左 Alt）を `@atab` が `press-vkey` で**押しっぱなし**にし、Tab を
+1 回叩きます。Alt は Tab を離しても保持されるので連続切替でき、無変換ホールドの
+`on-release` で Alt を離して確定します（保険として ~1.5 秒アイドルでも解放）。Tab に Ctrl を
+乗せないため、無変換ホールドは 1 個の右 Ctrl ではなく MH レイヤーで各キーを個別に
+`(multi rctl X)` に割り当てる方式にしています（1 個の rctl を握ったままだと Alt+Tab が
+`Ctrl+Alt+Tab` = Windows の別モードの固定スイッチャになってしまうため）。
+
+代償が 2 つあります。
+
+- `無変換+Tab` から `Ctrl+Tab`（ブラウザのタブ切替）は出なくなります。物理 Ctrl で取ります。
+- **無変換だけ押しっぱなし**（キーは押さない）では Ctrl は握られません。マウスの
+  Ctrl+クリック / Ctrl+スクロール（ズーム）を無変換で、という用途は不可で、物理 Ctrl
+  （CapsLock）を使います。キーボードの `無変換+文字` ショートカットは従来どおり全部効きます。
 
 注意: 無変換は `tap-hold-press` を使っており、無変換を押した後**別のキーを押した瞬間**に
 ホールド（=右 Ctrl）が発火します。`無変換↓ → c↓ → c↑ → 無変換↑` で Ctrl+C。

@@ -1,11 +1,14 @@
 ;; kanata configuration
 ;;
 ;; Thumb keys:
-;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = RIGHT Ctrl
+;;   無変換 (Muhenkan, left)  -> tap = F13 (=英数/IME OFF), hold = MH layer
 ;;     Held, every key becomes Ctrl+key -- Ctrl+A..Z 全部、Ctrl+1..9 (タブ切替) も。
-;;     Right Ctrl で発火するので、左 Ctrl ベースの defoverrides (Home/Left/...) には
-;;     横取りされない。例外: 無変換+[/] は defoverrides で Alt+Left/Right (browser
-;;     back/forward) に置換 -- Mac の Cmd+[/] に近い指の動き。
+;;     各キーを個別に (multi rctl X) = Right Ctrl+X に割り当てる。Right Ctrl なので、
+;;     左 Ctrl ベースの defoverrides (Home/Left/...) には横取りされない。
+;;     例外 1: 無変換+[/] は defoverrides で Alt+Left/Right (browser back/forward) に
+;;             置換 -- Mac の Cmd+[/] に近い指の動き。
+;;     例外 2: 無変換+Tab = super-alt-tab (Alt を保持したまま Tab 連打でウィンドウを
+;;             サイクル、無変換を離すと確定)。Mac の Cmd+Tab と同じ操作感。詳細は @atab。
 ;;   変換   (Henkan,   right) -> tap = F14 (=かな/IME ON),  hold = NUMS layer
 ;;     (q..p = 1..0, 1..0 = F1..F10, h/j/k/l = ←↓↑→,
 ;;      n/m/,/. = Home/PgDn/PgUp/End)
@@ -35,16 +38,21 @@
   process-unmapped-keys yes
 )
 
-;; a b f n lctl d [ are listed here (e, p, k, o are already above) so the Emacs
-;; defoverrides have their keys explicitly defined. All map to themselves in base
-;; and are transparent in the hold layer. k/o are deliberately left as plain k/o
-;; (Ctrl+k / Ctrl+o pass through native -- see the alias block).
-;;
-;; 無変換 = Right Ctrl: 無変換 hold は専用レイヤーを持たず、単に Right Ctrl を
-;; 押した状態にする。これにより 無変換+任意キー = Ctrl+任意キー がレイヤー定義
-;; なしで全部効く (旧 Win-as-RightCtrl と同じトリックを無変換に移植)。Right Ctrl
-;; を使うのは、左 Ctrl ベースの defoverrides (Ctrl+a -> Home など) に横取りされない
-;; ようにするため -- 無変換+a は Select All のまま、Home にはならない。
+;; 無変換 hold は MH layer を有効化する。以前は「hold = Right Ctrl を押しっぱなし」
+;; という 1 個の rctl で全キーを Ctrl 化していたが、それだと super-alt-tab のときに
+;; rctl も一緒に握られたまま Alt+Tab を出すことになり、Windows では Ctrl+Alt+Tab
+;; (別モードの固定タスクスイッチャ) になってしまう。そこで MH layer で各キーを個別に
+;; (multi rctl X) へ割り当て、Tab だけ Ctrl を乗せない super-alt-tab (@atab) にした。
+;;   - 数字/英字/記号 -> (multi rctl X) = Right Ctrl+X。Right Ctrl を使うのは左 Ctrl
+;;     ベースの defoverrides (Ctrl+a -> Home 等) に横取りされないため -- 無変換+a は
+;;     Select All のまま、Home にはならない。
+;;   - lctl の位置と muhenkan/henkan の位置は _ (透過)。
+;;   - k/o も (multi rctl k/o) = 素の Ctrl+k / Ctrl+o なので、ターミナルの readline
+;;     (Ctrl+k = kill-to-EOL 等) はそのまま効く。Emacs 系リマップはしない。
+;;   - tab -> @atab (super-alt-tab)。
+;; 代償: 「無変換だけ押しっぱなし (キーは押さない)」状態では Ctrl は握られない。
+;;   マウスの Ctrl+クリック / Ctrl+スクロール(ズーム) を無変換で、という用途は不可。
+;;   その場合は物理 Ctrl (CapsLock) を使う。
 ;;
 ;; 変換 hold layer (NUMS): numbers / function keys を 1 段ずらして並べる。
 ;;   - q..p   = 1..0           (ホームポジションの 1 段下に数字)
@@ -58,6 +66,7 @@
   muhenkan henkan
   a b f n lctl d [ ]
   m , .
+  tab
 )
 
 (deflayer base
@@ -67,6 +76,7 @@
   @mh @hk
   a b f n lctl d [ ]
   m , .
+  tab
 )
 
 (deflayer nums
@@ -76,26 +86,52 @@
   _ _
   _ _ _ home _ _ _ _
   pgdn pgup end
+  _
+)
+
+;; MH layer (無変換 hold): 各キー = Right Ctrl+key。位置は defsrc と 1:1 対応。
+;; Tab だけ super-alt-tab。lctl / muhenkan / henkan の位置は透過 (_)。
+(deflayer mh
+  (multi rctl 1) (multi rctl 2) (multi rctl 3) (multi rctl 4) (multi rctl 5) (multi rctl 6) (multi rctl 7) (multi rctl 8) (multi rctl 9) (multi rctl 0)
+  (multi rctl q) (multi rctl w) (multi rctl e) (multi rctl r) (multi rctl t) (multi rctl y) (multi rctl u) (multi rctl i) (multi rctl o) (multi rctl p)
+  (multi rctl h) (multi rctl j) (multi rctl k) (multi rctl l)
+  _ _
+  (multi rctl a) (multi rctl b) (multi rctl f) (multi rctl n) _ (multi rctl d) (multi rctl [) (multi rctl ])
+  (multi rctl m) (multi rctl ,) (multi rctl .)
+  @atab
+)
+
+;; vkalt: super-alt-tab 用に「押しっぱなしにする」Alt。@atab が押し、無変換 を離した
+;; とき (@mh の on-release) に離す = 選択確定。保険として ~1.5s アイドルでも離す
+;; (キーアップを取りこぼして Alt が握りっぱなしになる事故の復旧)。
+(defvirtualkeys
+  vkalt lalt
 )
 
 (defalias
   ;; tap = layout-independent IME key (F13/F14).
-  ;; 無変換: hold = Right Ctrl (即発火、Ctrl+key を出す)
+  ;; 無変換: hold = MH layer。同時に on-release で vkalt を離す (super-alt-tab の確定)。
   ;; 変換:   hold = NUMS layer (release-favored、誤発火しにくい)
-  mh (tap-hold-press    200 200 f13 rctl)
-  hk (tap-hold-release  200 200 f14 (layer-while-held nums))
+  mh (tap-hold-press 200 200 f13
+       (multi
+         (layer-while-held mh)
+         (on-release release-vkey vkalt)))
+  hk (tap-hold-release 200 200 f14 (layer-while-held nums))
+
+  ;; super-alt-tab: Alt (vkalt) を押して保持したまま Tab を 1 回叩く。Alt は Tab を
+  ;; 離しても握られたままなので、無変換 を押しっぱなしで Tab を連打すれば 3 枚以上
+  ;; 先までサイクルできる。無変換 を離すと @mh の on-release で Alt が離れて確定
+  ;; (Mac の Cmd+Tab と同じ)。Shift は defsrc 未定義で素通りするので、無変換+Shift+Tab
+  ;; は Alt+Shift+Tab = 逆順サイクルになる。macro の 5(ms) は Tab より先に Alt を
+  ;; 確実に押させるためのディレイ。on-idle 1500 は握りっぱなし事故に対する保険で、
+  ;; Tab を叩いている間はアイドル扱いにならないので途中で確定はしない (1.5s 以上手が
+  ;; 止まると確定する。数字は好みで調整可)。
+  atab (multi
+         (on-idle 1500 release-vkey vkalt)
+         (macro (on-press press-vkey vkalt) 5 tab))
 
   ;; Win key is left as plain `lmet` (no remap) -- Start menu / Win+L / Win+D /
   ;; Win+E etc. all behave normally.
-
-  ;; Note: Ctrl+k and Ctrl+o are intentionally NOT remapped. They pass through as
-  ;; native Ctrl+k / Ctrl+o so terminals (WSL / Windows Terminal) keep their
-  ;; readline bindings (Ctrl+k = kill-to-EOL, Ctrl+o = operate-and-get-next). A
-  ;; previous version forked them into Shift+End/Shift+Delete (GUI "kill line")
-  ;; and Enter/Left (GUI "open line"), but those emit terminal escape sequences in
-  ;; a shell -- e.g. Ctrl+k printed a stray `~F` -- because kanata's low-level hook
-  ;; intercepts the key before the terminal ever sees it. Trade-off: GUI apps no
-  ;; longer get macOS-style kill-to-EOL / open-line on these keys.
 )
 
 ;; macOS-style Emacs caret motion / editing:
@@ -104,7 +140,8 @@
 ;;   Ctrl+p -> Up (↑)             Ctrl+n -> Down (↓)
 ;;   Ctrl+d -> Delete (前方削除)   Ctrl+[ -> Esc
 ;;   Ctrl+h -> Backspace (後方削除)
-;; (Ctrl+k / Ctrl+o are NOT remapped -- they pass through native; see alias block.)
+;; (Ctrl+k / Ctrl+o are NOT remapped -- they pass through native; MH layer emits
+;; plain (multi rctl k/o) = Ctrl+k / Ctrl+o so terminals keep their readline binds.)
 ;;
 ;; defoverrides (not defchordsv2): an override fires whenever all its keys are
 ;; held, re-checked on every key event with NO timeout. So you can keep Ctrl held
@@ -118,8 +155,8 @@
 ;; C-b bold, C-e, C-n new, C-p print, C-d bookmark, C-[ ...). Unlike macOS (where
 ;; these sit on Ctrl because Cmd is the shortcut modifier), Windows has no separate
 ;; modifier and kanata can't tell whether a text field is focused, so this is global.
-;; 無変換 hold = Right Ctrl はこの defoverrides の対象外なので、無変換+a/b/f/n/d/p/h/e/[
-;; は奪われずに Ctrl+letter として効く。
+;; MH layer は Right Ctrl+key を出すので、この左 Ctrl ベースの defoverrides には
+;; 横取りされない -- 無変換+a/b/f/n/d/p/h/e/[ は Ctrl+letter のまま効く。
 ;;
 ;; lctl also covers CapsLock (mapped to Left Ctrl via the Windows Scancode Map).
 ;; If you also use the *right* Ctrl for these, add (rctl a) (home) ... lines too.
