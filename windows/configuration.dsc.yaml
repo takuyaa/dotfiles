@@ -369,14 +369,12 @@ properties:
         Ensure: Present
         Force: true
 
-    # Pin Google日本語入力 as the default input method (既定の入力方式の上書き).
-    # After a fullscreen game (exclusive fullscreen) disables the IME and
-    # Windows re-associates input, this override makes the focus fall back to
-    # Google IME instead of a bare "英語 (米国)/US" layout. The value is the
-    # Google IME text-service TIP: 0411:{lang-GUID}{profile-GUID}. It points at
-    # the ja language + Google IME set up in Settings (per-user UI state); this
-    # only records the *default*, so the language itself must already be added.
-    # Mirrors Set-WinDefaultInputMethodOverride. Takes effect after sign-in.
+    # Pin Google日本語入力 as the default input method (既定の入力方式の上書き /
+    # Set-WinDefaultInputMethodOverride): sign-in and new sessions default to
+    # Google IME rather than the Japanese language's base keyboard layout.
+    # The value is the Google IME text-service TIP: 0411:{lang-GUID}{profile-GUID};
+    # it only records the *default*, so the ja language + Google IME must already
+    # be added in Settings (per-user UI state). Takes effect after sign-in.
     - resource: PSDscResources/Registry
       id: ime-default-override
       directives:
