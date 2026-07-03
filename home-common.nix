@@ -474,6 +474,18 @@ in
     '';
   };
 
+  # Agent Skills — an open, vendor-neutral standard (https://agentskills.io),
+  # adopted by Claude Code, Codex, Cursor, Gemini CLI, opencode, and others.
+  # The canonical, tool-agnostic skills live under skills/<name>/SKILL.md in
+  # this repo. Each agent discovers skills from its OWN path, so we symlink the
+  # same source into each tool's directory. Today only Claude Code
+  # (~/.claude/skills/); to wire up another agent, add a line pointing its
+  # discovery path at the same ./skills/<name> source (e.g. .codex/skills/...).
+  # To add a skill, drop a directory under skills/ and add a line here, then
+  # run `rebuild`.
+  home.file.".claude/skills/japanese-tech-writing".source =
+    ./skills/japanese-tech-writing;
+
   # Claude global CLAUDE.md (shared across macOS/Linux)
   home.file.".claude/CLAUDE.md".text = ''
     # Global Claude Code Settings

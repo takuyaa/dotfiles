@@ -18,6 +18,7 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `darwin.nix` — macOS system settings and Homebrew
 - `home-common.nix` — packages, dotfiles, and shell config shared by all hosts
 - `home-darwin.nix` / `home-linux.nix` — OS-specific overrides
+- `skills/` — vendor-neutral [Agent Skills](https://agentskills.io) (open standard: `SKILL.md` folders, portable across Claude Code, Codex, Cursor, opencode, …). These are the canonical copies; `home-common.nix` symlinks each `skills/<name>` read-only into every consuming agent's discovery path. Today only Claude Code (`~/.claude/skills/<name>`); other tools are one extra symlink line. Add a directory plus a `home.file` line, then `rebuild`.
 - `windows/` — Windows host config (winget DSC + kanata + Google Japanese IME); applied with `winget configure`, not Nix
 - `fonts/biz-udp/` — vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) shared by both OSes; installed via `home-linux.nix` (Nix) and `windows/configuration.dsc.yaml` (DSC)
 
