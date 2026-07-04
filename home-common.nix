@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, ... }:
+{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, agent-skills, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -485,6 +485,16 @@ in
   # run `rebuild`.
   home.file.".claude/skills/japanese-tech-writing".source =
     ./skills/japanese-tech-writing;
+
+  # Upstream Agent Skills pulled from the `agent-skills` flake input
+  # (anthropics/skills, Apache-2.0), pinned in flake.lock and updated via
+  # `update`. Referenced from the Nix store — nothing is vendored into this
+  # repo, so nothing is redistributed. To add one, symlink another
+  # skills/<name> subdir of the input here.
+  home.file.".claude/skills/skill-creator".source =
+    "${agent-skills}/skills/skill-creator";
+  home.file.".claude/skills/mcp-builder".source =
+    "${agent-skills}/skills/mcp-builder";
 
   # Claude global CLAUDE.md (shared across macOS/Linux)
   home.file.".claude/CLAUDE.md".text = ''

@@ -38,6 +38,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Agent Skills (open standard) source, pinned in flake.lock and updated via
+    # `update`. flake=false: it is a plain source tree, not a flake. Selected
+    # skill subdirs are symlinked into ~/.claude/skills/ by home-common.nix.
+    agent-skills = {
+      url = "github:anthropics/skills";
+      flake = false;
+    };
+
     worktrunk = {
       url = "github:max-sixty/worktrunk";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -55,6 +63,7 @@
     homebrew-bundle,
     gws,
     worktrunk,
+    agent-skills,
   }: let
     system = "aarch64-darwin"; # For Apple Silicon Macs (use "x86_64-darwin" for Intel Macs)
     username = "takuya.asano";
@@ -77,7 +86,7 @@
             home-manager.backupFileExtension = "backup";
             home-manager.users.${username} = import ./home-darwin.nix;
             home-manager.extraSpecialArgs = {
-              inherit username userHome;
+              inherit username userHome agent-skills;
               gws-pkg = gws.packages.${system}.default;
               worktrunk-pkg = worktrunk.packages.${system}.default;
             };
@@ -97,6 +106,7 @@
         extraSpecialArgs = {
           username = "takuya-a";
           userHome = "/home/takuya-a";
+          inherit agent-skills;
           gws-pkg = gws.packages."x86_64-linux".default;
           worktrunk-pkg = worktrunk.packages."x86_64-linux".default;
         };

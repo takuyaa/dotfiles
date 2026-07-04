@@ -107,7 +107,7 @@ pptx2pdf slides/deck.pptx     # → slides/deck.pdf（全フォント emb=yes �
 ├── home-common.nix   # Shared user config (packages, bash, git, tmux, etc.)
 ├── home-darwin.nix   # macOS-specific config (imports home-common.nix)
 ├── home-linux.nix    # Linux-specific config (imports home-common.nix)
-├── skills/           # Vendor-neutral Agent Skills (agentskills.io); symlinked into each agent's path (Claude Code: ~/.claude/skills/) via home-common.nix
+├── skills/           # Own Agent Skills (agentskills.io); symlinked into ~/.claude/skills/ via home-common.nix (upstream skills come from the agent-skills flake input)
 ├── windows/          # Windows host config (winget DSC + kanata + Google IME); `winget configure`, not Nix
 ├── fonts/biz-udp/    # Vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) for WSL2 + Windows
 ├── Makefile          # Platform-aware rebuild/update targets
