@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, agent-skills, ... }:
+{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, agent-skills, mattpocock-skills, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -495,6 +495,15 @@ in
     "${agent-skills}/skills/skill-creator";
   home.file.".claude/skills/mcp-builder".source =
     "${agent-skills}/skills/mcp-builder";
+
+  # Matt Pocock's grill-me (MIT), from the `mattpocock-skills` flake input.
+  # grill-me is the manual /grill-me entry point; it delegates to grilling,
+  # which holds the actual Socratic-interview methodology and auto-triggers on
+  # "grill" phrases. Both are needed for the full behavior.
+  home.file.".claude/skills/grill-me".source =
+    "${mattpocock-skills}/skills/productivity/grill-me";
+  home.file.".claude/skills/grilling".source =
+    "${mattpocock-skills}/skills/productivity/grilling";
 
   # Claude global CLAUDE.md (shared across macOS/Linux)
   home.file.".claude/CLAUDE.md".text = ''

@@ -46,6 +46,13 @@
       flake = false;
     };
 
+    # Matt Pocock's skills (MIT). Source of the canonical grill-me + grilling
+    # Socratic-interview skills. Same flake=false / symlink pattern as above.
+    mattpocock-skills = {
+      url = "github:mattpocock/skills";
+      flake = false;
+    };
+
     worktrunk = {
       url = "github:max-sixty/worktrunk";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -64,6 +71,7 @@
     gws,
     worktrunk,
     agent-skills,
+    mattpocock-skills,
   }: let
     system = "aarch64-darwin"; # For Apple Silicon Macs (use "x86_64-darwin" for Intel Macs)
     username = "takuya.asano";
@@ -86,7 +94,7 @@
             home-manager.backupFileExtension = "backup";
             home-manager.users.${username} = import ./home-darwin.nix;
             home-manager.extraSpecialArgs = {
-              inherit username userHome agent-skills;
+              inherit username userHome agent-skills mattpocock-skills;
               gws-pkg = gws.packages.${system}.default;
               worktrunk-pkg = worktrunk.packages.${system}.default;
             };
@@ -106,7 +114,7 @@
         extraSpecialArgs = {
           username = "takuya-a";
           userHome = "/home/takuya-a";
-          inherit agent-skills;
+          inherit agent-skills mattpocock-skills;
           gws-pkg = gws.packages."x86_64-linux".default;
           worktrunk-pkg = worktrunk.packages."x86_64-linux".default;
         };
