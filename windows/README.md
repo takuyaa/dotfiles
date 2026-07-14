@@ -383,6 +383,82 @@ code .
 
    Pod が立ち上がったら `ssh dev` でログインできます。
 
+## トラブルシューティング: IME（無変換/変換）が切り替わらない
+
+設計は「kanata が 無変換/変換 を F13/F14 に変換 → Google 日本語入力のカスタム
+キーマップが IME オン/オフに対応付け」の 2 段。効かないときは上流から切り分ける。
+切れる箇所は主に次の 3 つ。
+
+### 1. kanata がキーを横取りできていない
+
+確認: `無変換 + q` ホールドが `1` にならなければ kanata が横取りしていない
+（スリープ復帰でのフック外れはステップ 3 の "kanata-resume" を参照）。別要因として:
+
+**Smart App Control（スマートアプリコントロール）によるブロック** — kanata は
+未署名バイナリのため、Windows 11 の SAC が「評価モード」から自動で「オン(強制)」に
+昇格するとブロックされる。クリーンインストール直後は SAC が評価モードで数週間動き、
+ある日突然オンに切り替わって kanata が起動しなくなる（既起動プロセスは動き続けるので、
+次回ログオン/再起動で発症する）。
+
+```powershell
+# SAC 状態（1=オン/強制, 2=評価, 0=オフ）
+(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy').VerifiedAndReputablePolicyState
+# kanata がブロックされた記録（Event 3077 に kanata のパスが出る）
+Get-WinEvent -LogName 'Microsoft-Windows-CodeIntegrity/Operational' -MaxEvents 40 |
+  Where-Object { $_.Message -match 'kanata' } | Select-Object TimeCreated, Id
+# タスクの前回結果 0x800711C7 = 「アプリケーション制御ポリシーによってブロック」
+(Get-ScheduledTaskInfo -TaskName kanata).LastTaskResult
+```
+
+対処: 設定 → プライバシーとセキュリティ → Windows セキュリティ → アプリとブラウザーの
+制御 → スマートアプリコントロールの設定 → **オフ** → 再起動。**注意: SAC はオフにすると
+Windows のリセットまで二度とオンに戻せない（一方通行）。** 署名で回避する手もあるが、
+SAC は評判(ISG)ベースで自己署名は無効、EV 証明書でも確実でないため非現実的。
+
+kanata が F13/F14 を出しているかの決定版の確認は、TTY ビルドを `--debug` で起動して
+ログを見る（変換タップで `key press F14` が出れば kanata 側は正常 = IME 側の問題）。
+一時的に実行中の kanata を止めてから:
+
+```powershell
+Stop-ScheduledTask -TaskName kanata
+& (Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\jtroo.kanata_gui_*" -Recurse -Filter kanata_windows_tty_winIOv2_x64.exe).FullName --cfg 'C:\Users\takuy\dotfiles\windows\kanata.kbd' --debug
+```
+
+### 2. アクティブな入力方式が Google 日本語入力になっていない（「ENG」表示）
+
+症状: タスクバーが「あ/A」ではなく「**ENG**」。この状態では F13/F14 を送っても
+受け手（IME）がおらず無反応になる。
+
+対処: **Win+Space** で「あ（Google 日本語入力）」に切り替える。言語切替ホットキーは
+無効化してあるので Win+Space が主な手段。
+
+### 3. TSF/IME が固まっている（「あ」アイコンをクリックしても無反応）
+
+症状: 「あ/A」表示は出るが、キー入力もマウスクリックも受け付けない。SAC ブロックや
+kanata の強制終了/再起動を繰り返した後などに起きうる。
+
+対処: **ctfmon（TSF ホスト）を再起動**する。**ネイティブの Windows シェルから**行うこと
+（WSL のターミナルからは権限/セッションの都合で落とせない）。ctfmon は kill 後に自動復帰
+しないことがあるので kill と start をセットで:
+
+```powershell
+Stop-Process -Name ctfmon -Force; Start-Process ctfmon
+```
+
+または `Win+R` → `cmd /c "taskkill /f /im ctfmon.exe & start ctfmon"`、あるいは
+タスクマネージャーで `ctfmon.exe` を「タスクの終了」。その後 **Win+Space** で Google
+日本語入力に切り替える。それでも直らなければ **サインアウト → サインイン**
+（セッション丸ごと再初期化。確実）。
+
+### 切り分け早見表
+
+| 症状 | 原因 | 対処 |
+|------|------|------|
+| 無変換+q ホールドが `1` にならない | kanata が横取りしていない | SAC を確認（上記 1）／スリープ復帰ならステップ 3 |
+| タスクバーが「ENG」 | 入力方式のズレ | Win+Space |
+| 「あ」表示でもクリック無反応 | TSF が固まっている | ctfmon 再起動 → Win+Space |
+| 何をしてもダメ | セッション状態の破綻 | サインアウト → サインイン |
+
 ## 使い方メモ
 
 - **アプリランチャー:** PowerToys Run（PowerToys の一部）はファジー検索の
