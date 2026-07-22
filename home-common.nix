@@ -509,8 +509,9 @@ in
   home.file.".claude/CLAUDE.md".text = ''
     # Global Claude Code Settings
 
-    ~/.claude/settings.json and ~/.claude/notify.sh are managed by Nix (Home Manager).
-    They are read-only symlinks and must not be edited directly.
+    ~/.claude/settings.json, ~/.claude/notify.sh, and ~/.claude/keybindings.json
+    are managed by Nix (Home Manager). They are read-only symlinks and must
+    not be edited directly.
 
     To change settings:
     1. Edit ~/ghq/github.com/takuyaa/dotfiles/home-common.nix
@@ -677,6 +678,28 @@ in
         type = "command";
         command = "bash ~/.claude/statusline-command.sh";
       };
+    };
+  };
+
+  # Custom keybindings on top of Claude Code's defaults (only the overrides,
+  # not a full copy of the defaults -- user bindings are additive, so listing
+  # everything here would go stale whenever upstream changes its defaults).
+  # Transcript mode's line-scroll (Ctrl+n/Ctrl+p) is already emacs-style by
+  # default; these add emacs-style page-scroll (Ctrl+v / Alt+v) alongside the
+  # existing vi-style keys (j/k, Ctrl+b/Ctrl+f, space, b).
+  home.file.".claude/keybindings.json" = {
+    text = builtins.toJSON {
+      "$schema" = "https://www.schemastore.org/claude-code-keybindings.json";
+      "$docs" = "https://code.claude.com/docs/en/keybindings";
+      bindings = [
+        {
+          context = "Transcript";
+          bindings = {
+            "ctrl+v" = "scroll:fullPageDown";
+            "alt+v" = "scroll:fullPageUp";
+          };
+        }
+      ];
     };
   };
 
