@@ -493,10 +493,21 @@ properties:
     # not Muhenkan/Henkan, not clicking the tray icon, not even Win+Space. Restarting
     # ctfmon after the engine is up re-instantiates the TIP against a live engine and
     # fixes it. This task automates that: at logon it waits (up to 120s) for
-    # GoogleIMEJaConverter, settles briefly, then kills and relaunches ctfmon.
-    # NOTE: registered NON-elevated (RunLevel Limited) on purpose -- an elevated
-    #       ctfmon can't service medium-integrity app windows (UIPI) and would break
-    #       IME for normal apps. It must run at the user's integrity in the session.
+    # GoogleIMEJaConverter, settles briefly, kills ctfmon, then lets Windows'
+    # own MsCtfMonitor task respawn it against the now-live engine.
+    #
+    # Two integrity constraints make the exact mechanism non-obvious:
+    #   - Killing ctfmon requires elevation. A non-elevated Stop-Process ctfmon
+    #     fails with Access Denied (verified), so an earlier RunLevel=Limited
+    #     version of this task was a silent no-op. Hence RunLevel=Highest here.
+    #   - But we must NOT Start-Process ctfmon from this elevated task: that would
+    #     launch ctfmon at High integrity, and an elevated ctfmon can't service
+    #     medium-integrity app windows (UIPI) -- breaking IME for normal apps.
+    # The fix for both: kill elevated, then trigger the built-in MsCtfMonitor
+    # (\Microsoft\Windows\TextServicesFramework\, RunLevel=Limited), which respawns
+    # ctfmon at the correct medium integrity in the user session. Triggering
+    # MsCtfMonitor also needs elevation (verified: Access Denied otherwise), which
+    # this task has.
     - resource: PSDscResources/Script
       id: ime-ctfmon-relaunch
       directives:
@@ -504,18 +515,27 @@ properties:
       settings:
         GetScript: |
           @{ Result = (Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue).TaskName }
-        # Self-heal if the task is missing or its action no longer relaunches ctfmon.
+        # Self-heal if the task is missing, no longer runs elevated (can't kill
+        # ctfmon otherwise), or its action no longer relaunches via MsCtfMonitor.
         TestScript: |
           $t = Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue
           if (-not $t) { return $false }
-          [bool]($t.Actions | Where-Object { $_.Arguments -like '*Start-Process ctfmon*' })
+          if ($t.Principal.RunLevel -ne 'Highest') { return $false }
+          [bool]($t.Actions | Where-Object { $_.Arguments -like '*MsCtfMonitor*' })
         SetScript: |
-          # Wait for GoogleIMEJaConverter (the IME engine), then restart ctfmon.
-          $cmd = 'try { $d=(Get-Date).AddSeconds(120); while (-not (Get-Process GoogleIMEJaConverter -ErrorAction SilentlyContinue) -and (Get-Date) -lt $d) { Start-Sleep -Seconds 2 }; Start-Sleep -Seconds 5; Stop-Process -Name ctfmon -Force -ErrorAction SilentlyContinue; Start-Process ctfmon } catch {}'
-          $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -Command "{0}"' -f $cmd)
+          # Wait for GoogleIMEJaConverter (the IME engine), kill the wedged ctfmon,
+          # then let MsCtfMonitor respawn it at medium integrity. A single-quoted
+          # here-string keeps the embedded single quotes (task path) literal; we
+          # concatenate rather than use -f because the payload contains { } braces.
+          $cmd = @'
+          try { $d=(Get-Date).AddSeconds(120); while (-not (Get-Process GoogleIMEJaConverter -ErrorAction SilentlyContinue) -and (Get-Date) -lt $d) { Start-Sleep -Seconds 2 }; Start-Sleep -Seconds 5; Stop-Process -Name ctfmon -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-ScheduledTask -TaskPath '\Microsoft\Windows\TextServicesFramework\' -TaskName MsCtfMonitor } catch {}
+          '@
+          $arg = '-NoProfile -WindowStyle Hidden -Command "' + $cmd.Trim() + '"'
+          $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arg
           $trigger   = New-ScheduledTaskTrigger -AtLogOn
-          # Non-elevated (Limited): an elevated ctfmon breaks TSF for normal-integrity apps.
-          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+          # Highest: needed to kill ctfmon and trigger MsCtfMonitor. ctfmon itself is
+          # NOT started here -- MsCtfMonitor respawns it at the correct integrity.
+          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
           $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
           Register-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 

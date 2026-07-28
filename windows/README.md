@@ -473,11 +473,33 @@ Stop-Process -Name ctfmon -Force; Start-Process ctfmon
 ```
 
 恒久対策（自動化済み）: `configuration.dsc.yaml` の **`ime-ctfmon-relaunch`** タスクが、
-ログオン時に `GoogleIMEJaConverter` の起動を待って（最大120秒）から ctfmon を再起動する。
-これでコールドブートでもレースを自動で解消する。**非昇格（RunLevel Limited）で登録**して
-いる点に注意——昇格した ctfmon は UIPI で中整合性アプリに TSF を提供できず、かえって IME
-を壊すため。登録確認は `Get-ScheduledTask -TaskName ime-ctfmon-relaunch`。切り分けの決め手は
-**Win+Space も効かないこと**（OS 直結の切替まで死んでいる＝既定のズレではなく TIP のハング）。
+ログオン時に `GoogleIMEJaConverter` の起動を待って（最大120秒）から ctfmon を貼り直す。
+これでコールドブートでもレースを自動で解消する。登録確認は
+`Get-ScheduledTask -TaskName ime-ctfmon-relaunch`。切り分けの決め手は **Win+Space も効かない
+こと**（OS 直結の切替まで死んでいる＝既定のズレではなく TIP のハング）。
+
+このタスクの整合性レベルの扱いが要注意（実装で一度踏んだ）:
+
+- **ctfmon の kill には昇格が必要。** 非昇格の `Stop-Process ctfmon` は必ず
+  `アクセスが拒否されました` で失敗する（検証済み）。最初の版は `RunLevel Limited` で
+  登録したため、`catch{}` に飲まれて**結果0のまま何もしない no-op** になっていた。よって
+  タスクは **`RunLevel Highest`（昇格）** で登録する。
+- **ただし昇格タスクから `Start-Process ctfmon` してはいけない。** それだと ctfmon が
+  High 整合性で起動し、UIPI で中整合性アプリに TSF を提供できず、今度は通常アプリの IME
+  が壊れる。
+- **両立させる方法:** 昇格で kill し、起動し直しは Windows 純正の **`MsCtfMonitor`**
+  タスク（`\Microsoft\Windows\TextServicesFramework\`、`RunLevel Limited`）を
+  `Start-ScheduledTask` でトリガする。これが ctfmon を**中整合性で**復活させる。
+  `MsCtfMonitor` のトリガ自体も昇格が必要（非昇格では同じく Access Denied。検証済み）で、
+  このタスクは昇格しているので通る。
+
+動作確認（タスクが実際に貼り直したかの決定版）: ブート後、**`ctfmon` の StartTime が
+`GoogleIMEJaConverter` より後**になっていれば成功。逆順のままなら貼り直しが効いていない。
+
+```powershell
+Get-ScheduledTaskInfo -TaskName ime-ctfmon-relaunch | Select LastRunTime, LastTaskResult
+Get-Process ctfmon, GoogleIMEJaConverter | Select Name, @{n='Start';e={$_.StartTime.ToString('HH:mm:ss')}} | Sort Start
+```
 
 ### 切り分け早見表
 
