@@ -480,6 +480,45 @@ properties:
           $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
           Register-ScheduledTask -TaskName 'kanata-resume' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 
+    # Relaunch ctfmon at logon once Google IME's engine is up, to cure a boot race.
+    # Google 日本語入力's TIP is a two-part IME: a thin client DLL
+    # (GoogleIMEJaTIP64.dll) that TSF loads into every app, and a separate engine
+    # process (GoogleIMEJaConverter.exe) it talks to over IPC. At logon ctfmon comes
+    # up early (via the MsCtfMonitor task) and makes Google IME the default input
+    # method immediately -- but the engine is launched from the HKLM Run entry
+    # "Google Japanese Input Prelauncher" (GoogleIMEJaBroker.exe), which sits behind
+    # Windows' ~30s startup-app delay. Measured on this box: ctfmon 9:36:23, engine
+    # 9:36:55. During that gap the TIP DLL loads with no engine to reach and wedges;
+    # once wedged it never recovers, so the IME icon shows but nothing responds --
+    # not Muhenkan/Henkan, not clicking the tray icon, not even Win+Space. Restarting
+    # ctfmon after the engine is up re-instantiates the TIP against a live engine and
+    # fixes it. This task automates that: at logon it waits (up to 120s) for
+    # GoogleIMEJaConverter, settles briefly, then kills and relaunches ctfmon.
+    # NOTE: registered NON-elevated (RunLevel Limited) on purpose -- an elevated
+    #       ctfmon can't service medium-integrity app windows (UIPI) and would break
+    #       IME for normal apps. It must run at the user's integrity in the session.
+    - resource: PSDscResources/Script
+      id: ime-ctfmon-relaunch
+      directives:
+        description: Register a logon task that restarts ctfmon after the IME engine starts
+      settings:
+        GetScript: |
+          @{ Result = (Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue).TaskName }
+        # Self-heal if the task is missing or its action no longer relaunches ctfmon.
+        TestScript: |
+          $t = Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue
+          if (-not $t) { return $false }
+          [bool]($t.Actions | Where-Object { $_.Arguments -like '*Start-Process ctfmon*' })
+        SetScript: |
+          # Wait for GoogleIMEJaConverter (the IME engine), then restart ctfmon.
+          $cmd = 'try { $d=(Get-Date).AddSeconds(120); while (-not (Get-Process GoogleIMEJaConverter -ErrorAction SilentlyContinue) -and (Get-Date) -lt $d) { Start-Sleep -Seconds 2 }; Start-Sleep -Seconds 5; Stop-Process -Name ctfmon -Force -ErrorAction SilentlyContinue; Start-Process ctfmon } catch {}'
+          $action    = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -Command "{0}"' -f $cmd)
+          $trigger   = New-ScheduledTaskTrigger -AtLogOn
+          # Non-elevated (Limited): an elevated ctfmon breaks TSF for normal-integrity apps.
+          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          Register-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+
     # ---- WSL networking ----
     # Deploy .wslconfig (networkingMode=mirrored) from this repo to %UserProfile%.
     # WSL only reads it from the fixed path %UserProfile%\.wslconfig, so we copy

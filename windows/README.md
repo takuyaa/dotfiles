@@ -450,6 +450,35 @@ Stop-Process -Name ctfmon -Force; Start-Process ctfmon
 日本語入力に切り替える。それでも直らなければ **サインアウト → サインイン**
 （セッション丸ごと再初期化。確実）。
 
+### 4. 再起動直後に限って全無反応（ブート時のレース）
+
+症状: **再起動のたびに**「あ」アイコンは出るのに、無変換/変換・トレイアイコンのクリック・
+**Win+Space のすべてが無反応**。ctfmon を手で再起動すると直る。スリープ復帰ではなく
+コールドブート/再起動が引き金。
+
+原因: Google 日本語入力は 2 プロセス構成で、TSF が各アプリに load する薄いクライアント
+`GoogleIMEJaTIP64.dll` と、それが IPC で話す変換エンジン `GoogleIMEJaConverter.exe` に
+分かれている。ログオン時、ctfmon は `MsCtfMonitor` タスクで**早期に**起動して既定の入力
+方式を Google IME TIP にするが、エンジンは HKLM Run の「Google Japanese Input
+Prelauncher」（`GoogleIMEJaBroker.exe`）から起動し、Windows の**スタートアップアプリ遅延
+（既定 約30秒）**に乗る。実測でも ctfmon 9:36:23 に対しエンジンは 9:36:55 と約30秒遅い。
+この空白の間に TIP DLL が接続先エンジン不在のまま load されて**ハングし、以後復帰しない**
+（後からエンジンが起きても手遅れ）。TSF/サービス/TIP 登録/DLL/override はいずれも正常で、
+純粋な起動順レース。
+
+対処（手動）: エンジン起動後に **ctfmon を再起動**（ケース3と同じ）。
+
+```powershell
+Stop-Process -Name ctfmon -Force; Start-Process ctfmon
+```
+
+恒久対策（自動化済み）: `configuration.dsc.yaml` の **`ime-ctfmon-relaunch`** タスクが、
+ログオン時に `GoogleIMEJaConverter` の起動を待って（最大120秒）から ctfmon を再起動する。
+これでコールドブートでもレースを自動で解消する。**非昇格（RunLevel Limited）で登録**して
+いる点に注意——昇格した ctfmon は UIPI で中整合性アプリに TSF を提供できず、かえって IME
+を壊すため。登録確認は `Get-ScheduledTask -TaskName ime-ctfmon-relaunch`。切り分けの決め手は
+**Win+Space も効かないこと**（OS 直結の切替まで死んでいる＝既定のズレではなく TIP のハング）。
+
 ### 切り分け早見表
 
 | 症状 | 原因 | 対処 |
@@ -457,6 +486,7 @@ Stop-Process -Name ctfmon -Force; Start-Process ctfmon
 | 無変換+q ホールドが `1` にならない | kanata が横取りしていない | SAC を確認（上記 1）／スリープ復帰ならステップ 3 |
 | タスクバーが「ENG」 | 入力方式のズレ | Win+Space |
 | 「あ」表示でもクリック無反応 | TSF が固まっている | ctfmon 再起動 → Win+Space |
+| **再起動直後に限って全無反応（Win+Space も）** | **ブート時のレース（TIP がエンジンより先に load）** | **ctfmon 再起動。恒久対策は `ime-ctfmon-relaunch` タスク（上記 4）** |
 | 何をしてもダメ | セッション状態の破綻 | サインアウト → サインイン |
 
 ## 使い方メモ
