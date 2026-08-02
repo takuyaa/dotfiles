@@ -415,6 +415,24 @@ Get-WinEvent -LogName 'Microsoft-Windows-CodeIntegrity/Operational' -MaxEvents 4
 Windows のリセットまで二度とオンに戻せない（一方通行）。** 署名で回避する手もあるが、
 SAC は評判(ISG)ベースで自己署名は無効、EV 証明書でも確実でないため非現実的。
 
+**タスクの実行時間制限（3日）による強制終了** — スケジュールタスクの既定
+`ExecutionTimeLimit` は **PT72H（3日）**。常駐の kanata をこのタスクで起動していると、
+連続稼働が3日を超えた時点で **Task Scheduler が kanata を強制終了**する（`LastTaskResult`
+が `0x41306 = SCHED_S_TASK_TERMINATED`）。その後は「次のログオン or スリープ復帰」まで
+再起動されないため、マシンをスリープ運用で3日以上つけっぱなしにしていると、ある日
+突然 IME 切替だけ効かなくなる（IME 本体は無傷。kanata プロセスが消えているだけ）。
+
+```powershell
+Get-Process kanata*                                   # 空なら kanata は死んでいる
+(Get-ScheduledTaskInfo -TaskName kanata).LastTaskResult   # 0x41306 なら時間制限で終了
+(Get-ScheduledTask -TaskName kanata).Settings.ExecutionTimeLimit  # PT72H = 未修正
+```
+
+対処: すぐ直すには `Start-ScheduledTask -TaskName kanata`。恒久対策は
+`configuration.dsc.yaml` で済み——kanata タスクの `ExecutionTimeLimit` を
+`([TimeSpan]::Zero)`（=`PT0S` 無制限）にしたので、再 apply すれば二度と刈られない
+（`TestScript` が `PT0S` 以外を検出して自己修復する）。
+
 kanata が F13/F14 を出しているかの決定版の確認は、TTY ビルドを `--debug` で起動して
 ログを見る（変換タップで `key press F14` が出れば kanata 側は正常 = IME 側の問題）。
 一時的に実行中の kanata を止めてから:
@@ -506,6 +524,7 @@ Get-Process ctfmon, GoogleIMEJaConverter | Select Name, @{n='Start';e={$_.StartT
 | 症状 | 原因 | 対処 |
 |------|------|------|
 | 無変換+q ホールドが `1` にならない | kanata が横取りしていない | SAC を確認（上記 1）／スリープ復帰ならステップ 3 |
+| IME は生きているが切替だけ死ぬ・kanata プロセスが消えている（`LastTaskResult 0x41306`） | 3日の実行時間制限で kanata が強制終了 | `Start-ScheduledTask kanata`。恒久対策は `ExecutionTimeLimit` 無制限化（上記 1／DSC 済み） |
 | タスクバーが「ENG」 | 入力方式のズレ | Win+Space |
 | 「あ」表示でもクリック無反応 | TSF が固まっている | ctfmon 再起動 → Win+Space |
 | **再起動直後に限って全無反応（Win+Space も）** | **ブート時のレース（TIP がエンジンより先に load）** | **ctfmon 再起動。恒久対策は `ime-ctfmon-relaunch` タスク（上記 4）** |
