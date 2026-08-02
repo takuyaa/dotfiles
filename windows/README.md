@@ -275,9 +275,15 @@ Ctrl として効くこと。kanata を昇格実行中にゲーム/アプリが�
 なることがあります（LLHOOK 版の既知バグ [jtroo/kanata#1307](https://github.com/jtroo/kanata/issues/1307)）。
 このとき kanata プロセスは生きたままキー横取りだけ止まるため、無変換 + `q` ホールドも
 `1` にならなくなります。復旧は `Stop-ScheduledTask -TaskName kanata; Start-ScheduledTask
--TaskName kanata`。これを自動化するため、復帰イベント（Power-Troubleshooter EventID 1）で
+-TaskName kanata`。これを自動化するため、**復帰イベント（`Kernel-Power` EventID 507/107）**で
 kanata を再起動する "kanata-resume" タスクを `configuration.dsc.yaml` で登録しています。
 登録確認は `Get-ScheduledTask -TaskName kanata-resume`。
+
+> 注意（実際に踏んだ罠）: 当初このトリガは `Power-Troubleshooter` EventID **1** を
+> 見張っていたが、**このマシンの Modern Standby 復帰ではこのイベントが立たない**（実測で
+> PT-1 は数日に1回しか出ず、実際の復帰は `Kernel-Power` **507** が担う）。そのため復帰の
+> 安全網が事実上死んでおり、フック外れが自動回復しなかった。トリガを 507/107（＋保険で
+> PT-1）に載せ替えて解消。同じ理由で `ime-ctfmon-relaunch` も復帰トリガを持つ（下記）。
 
 ## 手動の後処理ステップ 4: WSL ディストロの初期化
 
@@ -441,7 +447,7 @@ Get-Process kanata*                                   # 空なら kanata は死�
 守っている:
 
 1. **ログオン起動**（`kanata` タスク, AtLogOn）
-2. **スリープ復帰で再起動**（`kanata-resume`, Power-Troubleshooter EventID 1。フック外れ対策）
+2. **スリープ復帰で再起動**（`kanata-resume`, `Kernel-Power` EventID 507/107。フック外れ対策）
 3. **時間制限なし**（`ExecutionTimeLimit = PT0S`。3日で刈られない）
 4. **クラッシュ時に自動再起動**（`RestartInterval = PT1M`, `RestartCount = 3`。落ちても最大3回、1分間隔で復帰。≒ systemd の `Restart=always`）
 
@@ -534,6 +540,21 @@ Get-ScheduledTaskInfo -TaskName ime-ctfmon-relaunch | Select LastRunTime, LastTa
 Get-Process ctfmon, GoogleIMEJaConverter | Select Name, @{n='Start';e={$_.StartTime.ToString('HH:mm:ss')}} | Sort Start
 ```
 
+#### 4b. 長時間稼働で ctfmon が固着する（かなモードなのに素通し）
+
+別の症状: **「あ」（かな）モードのままなのにアルファベットしか出ない**（変換されず素通し）。
+IME 本体もエンジンも生きていて、kanata も無関係（kanata を再起動しても直らない。切替
+自体はできている）。これは **ctfmon/TSF が長時間連続稼働の末に wedge した**もので、
+実測では **約5日連続稼働**（Fast Startup ＋ Modern Standby で新規ログオンが挟まらない
+運用）で発生。手動復旧は上と同じ **ctfmon 貼り直し**（`ime-ctfmon-relaunch` を手動発火
+＝`Start-ScheduledTask -TaskName ime-ctfmon-relaunch` でも可）。
+
+恒久対策: `ime-ctfmon-relaunch` に **復帰トリガ（`Kernel-Power` 507/107）** を追加し、
+**復帰時に ctfmon が24時間以上連続稼働していれば貼り直す**（それ未満はスキップ）。これで
+連続稼働が最長 ~1日に抑えられ、5日級の wedge に到達しない。頻繁な復帰では IME をむやみに
+リセットしないよう **>24h の齢ガード**を入れている。ブートレース対策（AtLogon、齢に関係なく
+「ctfmon がエンジンより先＝逆順」なら貼り直し）と同じタスクが両モードを担当する。
+
 ### 切り分け早見表
 
 | 症状 | 原因 | 対処 |
@@ -543,6 +564,7 @@ Get-Process ctfmon, GoogleIMEJaConverter | Select Name, @{n='Start';e={$_.StartT
 | タスクバーが「ENG」 | 入力方式のズレ | Win+Space |
 | 「あ」表示でもクリック無反応 | TSF が固まっている | ctfmon 再起動 → Win+Space |
 | **再起動直後に限って全無反応（Win+Space も）** | **ブート時のレース（TIP がエンジンより先に load）** | **ctfmon 再起動。恒久対策は `ime-ctfmon-relaunch` タスク（上記 4）** |
+| **かなモードなのにアルファベット素通し（数日連続稼働後）** | **ctfmon/TSF の長時間 wedge** | **ctfmon 貼り直し。恒久対策は復帰時の齢ガード付き自動リフレッシュ（上記 4b）** |
 | 何をしてもダメ | セッション状態の破綻 | サインアウト → サインイン |
 
 ## 使い方メモ
