@@ -415,6 +415,8 @@ properties:
           # no logon/resume to re-trigger it, IME key remapping silently dies. Force
           # re-registration if a stale task still carries a time limit.
           if ($t.Settings.ExecutionTimeLimit -ne 'PT0S') { return $false }
+          # Also self-heal the restart-on-failure recovery (crash -> auto relaunch).
+          if ($t.Settings.RestartCount -ne 3 -or $t.Settings.RestartInterval -ne 'PT1M') { return $false }
           $cfg = 'C:\Users\takuy\dotfiles\windows\kanata.kbd'
           [bool]($t.Actions | Where-Object { $_.Arguments -like ('*"{0}"*' -f $cfg) })
         SetScript: |
@@ -444,9 +446,17 @@ properties:
           $action    = New-ScheduledTaskAction -Execute $exe -Argument ('--cfg "{0}"' -f $cfg)
           $trigger   = New-ScheduledTaskTrigger -AtLogOn
           $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
-          # ExecutionTimeLimit Zero (=PT0S, "no time limit"): kanata is a permanent
-          # daemon, so the default 3-day cap would reap it (see TestScript note).
-          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
+          # kanata is a permanent daemon, but Task Scheduler is a launcher, not a
+          # supervisor. Two settings make it behave more like systemd Restart=always:
+          #   ExecutionTimeLimit Zero (=PT0S, "no time limit") -- else the default
+          #     3-day cap reaps it (see TestScript note).
+          #   RestartInterval/RestartCount -- if kanata's process exits/crashes,
+          #     relaunch it after 1 min, up to 3 times. Together with the AtLogon
+          #     trigger and the kanata-resume (sleep) task, that's 4 layers of
+          #     coverage. (A service/SCM can't host kanata: services run in Session 0
+          #     with no interactive desktop, but kanata needs the user session to
+          #     install its WH_KEYBOARD_LL hook and SendInput -- hence a logon task.)
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartInterval (New-TimeSpan -Minutes 1) -RestartCount 3
           Register-ScheduledTask -TaskName 'kanata' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 
     # Restart kanata whenever the system resumes from sleep/hibernate.

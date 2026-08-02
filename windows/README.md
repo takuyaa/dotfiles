@@ -433,6 +433,21 @@ Get-Process kanata*                                   # 空なら kanata は死�
 `([TimeSpan]::Zero)`（=`PT0S` 無制限）にしたので、再 apply すれば二度と刈られない
 （`TestScript` が `PT0S` 以外を検出して自己修復する）。
 
+なぜサービス（SCM）にしないのか: Windows のサービスは **Session 0** で動き、ユーザーの
+対話デスクトップに触れない。kanata は `WH_KEYBOARD_LL` フックの設置と `SendInput` の
+ために**ユーザーの対話セッション**が必要なので、サービス化できず、ログオン時タスクで
+動かす（kanata 公式も同じ推奨）。ただしタスクスケジューラは systemd のような
+スーパーバイザではなく launcher なので、監視は自前で補う。今の kanata は次の **4段**で
+守っている:
+
+1. **ログオン起動**（`kanata` タスク, AtLogOn）
+2. **スリープ復帰で再起動**（`kanata-resume`, Power-Troubleshooter EventID 1。フック外れ対策）
+3. **時間制限なし**（`ExecutionTimeLimit = PT0S`。3日で刈られない）
+4. **クラッシュ時に自動再起動**（`RestartInterval = PT1M`, `RestartCount = 3`。落ちても最大3回、1分間隔で復帰。≒ systemd の `Restart=always`）
+
+3・4 が今回追加分。設定確認は
+`(Get-ScheduledTask -TaskName kanata).Settings | Select ExecutionTimeLimit, RestartInterval, RestartCount`。
+
 kanata が F13/F14 を出しているかの決定版の確認は、TTY ビルドを `--debug` で起動して
 ログを見る（変換タップで `key press F14` が出れば kanata 側は正常 = IME 側の問題）。
 一時的に実行中の kanata を止めてから:
