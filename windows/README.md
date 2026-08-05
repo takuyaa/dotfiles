@@ -275,9 +275,15 @@ Ctrl として効くこと。kanata を昇格実行中にゲーム/アプリが�
 なることがあります（LLHOOK 版の既知バグ [jtroo/kanata#1307](https://github.com/jtroo/kanata/issues/1307)）。
 このとき kanata プロセスは生きたままキー横取りだけ止まるため、無変換 + `q` ホールドも
 `1` にならなくなります。復旧は `Stop-ScheduledTask -TaskName kanata; Start-ScheduledTask
--TaskName kanata`。これを自動化するため、復帰イベント（Power-Troubleshooter EventID 1）で
+-TaskName kanata`。これを自動化するため、**復帰イベント（`Kernel-Power` EventID 507/107）**で
 kanata を再起動する "kanata-resume" タスクを `configuration.dsc.yaml` で登録しています。
 登録確認は `Get-ScheduledTask -TaskName kanata-resume`。
+
+> 注意（実際に踏んだ罠）: 当初このトリガは `Power-Troubleshooter` EventID **1** を
+> 見張っていたが、**このマシンの Modern Standby 復帰ではこのイベントが立たない**（実測で
+> PT-1 は数日に1回しか出ず、実際の復帰は `Kernel-Power` **507** が担う）。そのため復帰の
+> 安全網が事実上死んでおり、フック外れが自動回復しなかった。トリガを 507/107（＋保険で
+> PT-1）に載せ替えて解消。同じ理由で `ime-ctfmon-relaunch` も復帰トリガを持つ（下記）。
 
 ## 手動の後処理ステップ 4: WSL ディストロの初期化
 
@@ -415,6 +421,39 @@ Get-WinEvent -LogName 'Microsoft-Windows-CodeIntegrity/Operational' -MaxEvents 4
 Windows のリセットまで二度とオンに戻せない（一方通行）。** 署名で回避する手もあるが、
 SAC は評判(ISG)ベースで自己署名は無効、EV 証明書でも確実でないため非現実的。
 
+**タスクの実行時間制限（3日）による強制終了** — スケジュールタスクの既定
+`ExecutionTimeLimit` は **PT72H（3日）**。常駐の kanata をこのタスクで起動していると、
+連続稼働が3日を超えた時点で **Task Scheduler が kanata を強制終了**する（`LastTaskResult`
+が `0x41306 = SCHED_S_TASK_TERMINATED`）。その後は「次のログオン or スリープ復帰」まで
+再起動されないため、マシンをスリープ運用で3日以上つけっぱなしにしていると、ある日
+突然 IME 切替だけ効かなくなる（IME 本体は無傷。kanata プロセスが消えているだけ）。
+
+```powershell
+Get-Process kanata*                                   # 空なら kanata は死んでいる
+(Get-ScheduledTaskInfo -TaskName kanata).LastTaskResult   # 0x41306 なら時間制限で終了
+(Get-ScheduledTask -TaskName kanata).Settings.ExecutionTimeLimit  # PT72H = 未修正
+```
+
+対処: すぐ直すには `Start-ScheduledTask -TaskName kanata`。恒久対策は
+`configuration.dsc.yaml` で済み——kanata タスクの `ExecutionTimeLimit` を
+`([TimeSpan]::Zero)`（=`PT0S` 無制限）にしたので、再 apply すれば二度と刈られない
+（`TestScript` が `PT0S` 以外を検出して自己修復する）。
+
+なぜサービス（SCM）にしないのか: Windows のサービスは **Session 0** で動き、ユーザーの
+対話デスクトップに触れない。kanata は `WH_KEYBOARD_LL` フックの設置と `SendInput` の
+ために**ユーザーの対話セッション**が必要なので、サービス化できず、ログオン時タスクで
+動かす（kanata 公式も同じ推奨）。ただしタスクスケジューラは systemd のような
+スーパーバイザではなく launcher なので、監視は自前で補う。今の kanata は次の **4段**で
+守っている:
+
+1. **ログオン起動**（`kanata` タスク, AtLogOn）
+2. **スリープ復帰で再起動**（`kanata-resume`, `Kernel-Power` EventID 507/107。フック外れ対策）
+3. **時間制限なし**（`ExecutionTimeLimit = PT0S`。3日で刈られない）
+4. **クラッシュ時に自動再起動**（`RestartInterval = PT1M`, `RestartCount = 3`。落ちても最大3回、1分間隔で復帰。≒ systemd の `Restart=always`）
+
+3・4 が今回追加分。設定確認は
+`(Get-ScheduledTask -TaskName kanata).Settings | Select ExecutionTimeLimit, RestartInterval, RestartCount`。
+
 kanata が F13/F14 を出しているかの決定版の確認は、TTY ビルドを `--debug` で起動して
 ログを見る（変換タップで `key press F14` が出れば kanata 側は正常 = IME 側の問題）。
 一時的に実行中の kanata を止めてから:
@@ -450,13 +489,82 @@ Stop-Process -Name ctfmon -Force; Start-Process ctfmon
 日本語入力に切り替える。それでも直らなければ **サインアウト → サインイン**
 （セッション丸ごと再初期化。確実）。
 
+### 4. 再起動直後に限って全無反応（ブート時のレース）
+
+症状: **再起動のたびに**「あ」アイコンは出るのに、無変換/変換・トレイアイコンのクリック・
+**Win+Space のすべてが無反応**。ctfmon を手で再起動すると直る。スリープ復帰ではなく
+コールドブート/再起動が引き金。
+
+原因: Google 日本語入力は 2 プロセス構成で、TSF が各アプリに load する薄いクライアント
+`GoogleIMEJaTIP64.dll` と、それが IPC で話す変換エンジン `GoogleIMEJaConverter.exe` に
+分かれている。ログオン時、ctfmon は `MsCtfMonitor` タスクで**早期に**起動して既定の入力
+方式を Google IME TIP にするが、エンジンは HKLM Run の「Google Japanese Input
+Prelauncher」（`GoogleIMEJaBroker.exe`）から起動し、Windows の**スタートアップアプリ遅延
+（既定 約30秒）**に乗る。実測でも ctfmon 9:36:23 に対しエンジンは 9:36:55 と約30秒遅い。
+この空白の間に TIP DLL が接続先エンジン不在のまま load されて**ハングし、以後復帰しない**
+（後からエンジンが起きても手遅れ）。TSF/サービス/TIP 登録/DLL/override はいずれも正常で、
+純粋な起動順レース。
+
+対処（手動）: エンジン起動後に **ctfmon を再起動**（ケース3と同じ）。
+
+```powershell
+Stop-Process -Name ctfmon -Force; Start-Process ctfmon
+```
+
+恒久対策（自動化済み）: `configuration.dsc.yaml` の **`ime-ctfmon-relaunch`** タスクが、
+ログオン時に `GoogleIMEJaConverter` の起動を待って（最大120秒）から ctfmon を貼り直す。
+これでコールドブートでもレースを自動で解消する。登録確認は
+`Get-ScheduledTask -TaskName ime-ctfmon-relaunch`。切り分けの決め手は **Win+Space も効かない
+こと**（OS 直結の切替まで死んでいる＝既定のズレではなく TIP のハング）。
+
+このタスクの整合性レベルの扱いが要注意（実装で一度踏んだ）:
+
+- **ctfmon の kill には昇格が必要。** 非昇格の `Stop-Process ctfmon` は必ず
+  `アクセスが拒否されました` で失敗する（検証済み）。最初の版は `RunLevel Limited` で
+  登録したため、`catch{}` に飲まれて**結果0のまま何もしない no-op** になっていた。よって
+  タスクは **`RunLevel Highest`（昇格）** で登録する。
+- **ただし昇格タスクから `Start-Process ctfmon` してはいけない。** それだと ctfmon が
+  High 整合性で起動し、UIPI で中整合性アプリに TSF を提供できず、今度は通常アプリの IME
+  が壊れる。
+- **両立させる方法:** 昇格で kill し、起動し直しは Windows 純正の **`MsCtfMonitor`**
+  タスク（`\Microsoft\Windows\TextServicesFramework\`、`RunLevel Limited`）を
+  `Start-ScheduledTask` でトリガする。これが ctfmon を**中整合性で**復活させる。
+  `MsCtfMonitor` のトリガ自体も昇格が必要（非昇格では同じく Access Denied。検証済み）で、
+  このタスクは昇格しているので通る。
+
+動作確認（タスクが実際に貼り直したかの決定版）: ブート後、**`ctfmon` の StartTime が
+`GoogleIMEJaConverter` より後**になっていれば成功。逆順のままなら貼り直しが効いていない。
+
+```powershell
+Get-ScheduledTaskInfo -TaskName ime-ctfmon-relaunch | Select LastRunTime, LastTaskResult
+Get-Process ctfmon, GoogleIMEJaConverter | Select Name, @{n='Start';e={$_.StartTime.ToString('HH:mm:ss')}} | Sort Start
+```
+
+#### 4b. 長時間稼働で ctfmon が固着する（かなモードなのに素通し）
+
+別の症状: **「あ」（かな）モードのままなのにアルファベットしか出ない**（変換されず素通し）。
+IME 本体もエンジンも生きていて、kanata も無関係（kanata を再起動しても直らない。切替
+自体はできている）。これは **ctfmon/TSF が長時間連続稼働の末に wedge した**もので、
+実測では **約5日連続稼働**（Fast Startup ＋ Modern Standby で新規ログオンが挟まらない
+運用）で発生。手動復旧は上と同じ **ctfmon 貼り直し**（`ime-ctfmon-relaunch` を手動発火
+＝`Start-ScheduledTask -TaskName ime-ctfmon-relaunch` でも可）。
+
+恒久対策: `ime-ctfmon-relaunch` に **復帰トリガ（`Kernel-Power` 507/107）** を追加し、
+**復帰時に ctfmon が24時間以上連続稼働していれば貼り直す**（それ未満はスキップ）。これで
+連続稼働が最長 ~1日に抑えられ、5日級の wedge に到達しない。頻繁な復帰では IME をむやみに
+リセットしないよう **>24h の齢ガード**を入れている。ブートレース対策（AtLogon、齢に関係なく
+「ctfmon がエンジンより先＝逆順」なら貼り直し）と同じタスクが両モードを担当する。
+
 ### 切り分け早見表
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
 | 無変換+q ホールドが `1` にならない | kanata が横取りしていない | SAC を確認（上記 1）／スリープ復帰ならステップ 3 |
+| IME は生きているが切替だけ死ぬ・kanata プロセスが消えている（`LastTaskResult 0x41306`） | 3日の実行時間制限で kanata が強制終了 | `Start-ScheduledTask kanata`。恒久対策は `ExecutionTimeLimit` 無制限化（上記 1／DSC 済み） |
 | タスクバーが「ENG」 | 入力方式のズレ | Win+Space |
 | 「あ」表示でもクリック無反応 | TSF が固まっている | ctfmon 再起動 → Win+Space |
+| **再起動直後に限って全無反応（Win+Space も）** | **ブート時のレース（TIP がエンジンより先に load）** | **ctfmon 再起動。恒久対策は `ime-ctfmon-relaunch` タスク（上記 4）** |
+| **かなモードなのにアルファベット素通し（数日連続稼働後）** | **ctfmon/TSF の長時間 wedge** | **ctfmon 貼り直し。恒久対策は復帰時の齢ガード付き自動リフレッシュ（上記 4b）** |
 | 何をしてもダメ | セッション状態の破綻 | サインアウト → サインイン |
 
 ## 使い方メモ

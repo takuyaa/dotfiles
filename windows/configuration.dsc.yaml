@@ -409,6 +409,14 @@ properties:
         TestScript: |
           $t = Get-ScheduledTask -TaskName 'kanata' -ErrorAction SilentlyContinue
           if (-not $t) { return $false }
+          # Must run unlimited: the default ExecutionTimeLimit (PT72H / 3 days)
+          # makes Task Scheduler *terminate* the long-running kanata after 3 days
+          # of continuous uptime (result 0x41306 SCHED_S_TASK_TERMINATED), and with
+          # no logon/resume to re-trigger it, IME key remapping silently dies. Force
+          # re-registration if a stale task still carries a time limit.
+          if ($t.Settings.ExecutionTimeLimit -ne 'PT0S') { return $false }
+          # Also self-heal the restart-on-failure recovery (crash -> auto relaunch).
+          if ($t.Settings.RestartCount -ne 3 -or $t.Settings.RestartInterval -ne 'PT1M') { return $false }
           $cfg = 'C:\Users\takuy\dotfiles\windows\kanata.kbd'
           [bool]($t.Actions | Where-Object { $_.Arguments -like ('*"{0}"*' -f $cfg) })
         SetScript: |
@@ -438,7 +446,17 @@ properties:
           $action    = New-ScheduledTaskAction -Execute $exe -Argument ('--cfg "{0}"' -f $cfg)
           $trigger   = New-ScheduledTaskTrigger -AtLogOn
           $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
-          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          # kanata is a permanent daemon, but Task Scheduler is a launcher, not a
+          # supervisor. Two settings make it behave more like systemd Restart=always:
+          #   ExecutionTimeLimit Zero (=PT0S, "no time limit") -- else the default
+          #     3-day cap reaps it (see TestScript note).
+          #   RestartInterval/RestartCount -- if kanata's process exits/crashes,
+          #     relaunch it after 1 min, up to 3 times. Together with the AtLogon
+          #     trigger and the kanata-resume (sleep) task, that's 4 layers of
+          #     coverage. (A service/SCM can't host kanata: services run in Session 0
+          #     with no interactive desktop, but kanata needs the user session to
+          #     install its WH_KEYBOARD_LL hook and SendInput -- hence a logon task.)
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartInterval (New-TimeSpan -Minutes 1) -RestartCount 3
           Register-ScheduledTask -TaskName 'kanata' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
 
     # Restart kanata whenever the system resumes from sleep/hibernate.
@@ -448,11 +466,14 @@ properties:
     # because they only reach the IME as F13/F14 emitted by kanata; the raw
     # scancodes are dead under the US layout (see kanata.kbd, defcfg comment).
     # A clean Stop -> Start re-installs the hook. This registers a second task,
-    # 'kanata-resume', fired by the Power-Troubleshooter "resumed from sleep"
-    # event (System log, EventID 1), that restarts the main 'kanata' task after a
-    # short settle delay. New-ScheduledTaskTrigger has no event-trigger form, so
-    # the trigger is built as an MSFT_TaskEventTrigger CIM instance with an XPath
-    # subscription (the standard workaround).
+    # 'kanata-resume', fired by system resume events, that restarts the main
+    # 'kanata' task after a short settle delay. The trigger watches Kernel-Power
+    # EventID 507/107 ("resumed from a low-power state") -- NOT Power-Troubleshooter
+    # EventID 1, which this machine's Modern Standby resumes never emit (verified:
+    # PT-1 last fired 07/29 while Kernel-Power 507 fired many times/day), so the
+    # original PT-1 trigger left the safety net dead. New-ScheduledTaskTrigger has no
+    # event-trigger form, so the trigger is an MSFT_TaskEventTrigger CIM instance
+    # with an XPath subscription (the standard workaround).
     - resource: PSDscResources/Script
       id: kanata-resume-restart
       dependsOn:
@@ -466,19 +487,107 @@ properties:
         TestScript: |
           $t = Get-ScheduledTask -TaskName 'kanata-resume' -ErrorAction SilentlyContinue
           if (-not $t) { return $false }
-          [bool]($t.Actions | Where-Object { $_.Arguments -like '*Start-ScheduledTask -TaskName kanata*' })
+          if (-not ($t.Actions | Where-Object { $_.Arguments -like '*Start-ScheduledTask -TaskName kanata*' })) { return $false }
+          # Self-heal the trigger: the original watched Power-Troubleshooter EventID 1,
+          # which does NOT fire on this machine's Modern Standby resumes (only
+          # Kernel-Power 507 does), so the resume safety net was silently dead. Force
+          # re-registration unless the subscription now covers Kernel-Power.
+          [bool]($t.Triggers | Where-Object { $_.Subscription -like '*Kernel-Power*' })
         SetScript: |
           $cmd = 'Start-Sleep -Seconds 5; Stop-ScheduledTask -TaskName kanata -ErrorAction SilentlyContinue; Start-ScheduledTask -TaskName kanata'
           $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -Command "{0}"' -f $cmd)
-          # Event trigger: System log, Microsoft-Windows-Power-Troubleshooter, EventID 1
-          # ("The system has resumed from sleep"). Fires on resume from sleep/hibernate.
+          # Event trigger: System log, resume from a low-power state. Watches
+          # Kernel-Power 507/107 (reliable on Modern Standby) plus Power-Troubleshooter
+          # 1 (legacy sleep) as a belt-and-suspenders OR.
           $class   = Get-CimClass -Namespace ROOT\Microsoft\Windows\TaskScheduler -ClassName MSFT_TaskEventTrigger
           $trigger = New-CimInstance -CimClass $class -ClientOnly
           $trigger.Enabled = $true
-          $trigger.Subscription = "<QueryList><Query Id='0' Path='System'><Select Path='System'>*[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and (EventID=1)]]</Select></Query></QueryList>"
+          $trigger.Subscription = "<QueryList><Query Id='0' Path='System'><Select Path='System'>*[System[(Provider[@Name='Microsoft-Windows-Kernel-Power'] and (EventID=507 or EventID=107)) or (Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and (EventID=1))]]</Select></Query></QueryList>"
           $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
           $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
           Register-ScheduledTask -TaskName 'kanata-resume' -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+
+    # Relaunch ctfmon at logon once Google IME's engine is up, to cure a boot race.
+    # Google 日本語入力's TIP is a two-part IME: a thin client DLL
+    # (GoogleIMEJaTIP64.dll) that TSF loads into every app, and a separate engine
+    # process (GoogleIMEJaConverter.exe) it talks to over IPC. At logon ctfmon comes
+    # up early (via the MsCtfMonitor task) and makes Google IME the default input
+    # method immediately -- but the engine is launched from the HKLM Run entry
+    # "Google Japanese Input Prelauncher" (GoogleIMEJaBroker.exe), which sits behind
+    # Windows' ~30s startup-app delay. Measured on this box: ctfmon 9:36:23, engine
+    # 9:36:55. During that gap the TIP DLL loads with no engine to reach and wedges;
+    # once wedged it never recovers, so the IME icon shows but nothing responds --
+    # not Muhenkan/Henkan, not clicking the tray icon, not even Win+Space. Restarting
+    # ctfmon after the engine is up re-instantiates the TIP against a live engine and
+    # fixes it. This task automates that: it waits (up to 120s) for
+    # GoogleIMEJaConverter, settles briefly, then -- only if a refresh is warranted
+    # -- kills ctfmon and lets Windows' own MsCtfMonitor task respawn it against the
+    # live engine.
+    #
+    # It fires on TWO triggers, for two failure modes:
+    #   - AtLogon: the boot race above (ctfmon defaulted to Google IME's TIP before
+    #     the engine existed -> TIP wedged). Detected as ctfmon older than the engine.
+    #   - On resume (Kernel-Power 507/107): ctfmon/TSF can wedge after days of
+    #     continuous uptime with no fresh logon (Fast Startup + Modern Standby;
+    #     observed after ~5 days). Guarded by age: only refresh if ctfmon has run
+    #     >24h, so normal frequent resumes don't churn the IME -- this just caps
+    #     ctfmon's continuous runtime at ~1 day, well under the observed wedge point.
+    # So the payload restarts ctfmon iff: it's missing, OR it started before the
+    # engine (boot race), OR it's older than 24h (stale). Otherwise it does nothing.
+    #
+    # Two integrity constraints make the exact mechanism non-obvious:
+    #   - Killing ctfmon requires elevation. A non-elevated Stop-Process ctfmon
+    #     fails with Access Denied (verified), so an earlier RunLevel=Limited
+    #     version of this task was a silent no-op. Hence RunLevel=Highest here.
+    #   - But we must NOT Start-Process ctfmon from this elevated task: that would
+    #     launch ctfmon at High integrity, and an elevated ctfmon can't service
+    #     medium-integrity app windows (UIPI) -- breaking IME for normal apps.
+    # The fix for both: kill elevated, then trigger the built-in MsCtfMonitor
+    # (\Microsoft\Windows\TextServicesFramework\, RunLevel=Limited), which respawns
+    # ctfmon at the correct medium integrity in the user session. Triggering
+    # MsCtfMonitor also needs elevation (verified: Access Denied otherwise), which
+    # this task has.
+    - resource: PSDscResources/Script
+      id: ime-ctfmon-relaunch
+      directives:
+        description: Register a logon task that restarts ctfmon after the IME engine starts
+      settings:
+        GetScript: |
+          @{ Result = (Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue).TaskName }
+        # Self-heal if the task is missing, no longer runs elevated (can't kill
+        # ctfmon otherwise), or its action no longer relaunches via MsCtfMonitor.
+        TestScript: |
+          $t = Get-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -ErrorAction SilentlyContinue
+          if (-not $t) { return $false }
+          if ($t.Principal.RunLevel -ne 'Highest') { return $false }
+          # Action must relaunch via MsCtfMonitor AND be the age-guarded version
+          # (TotalHours check); a trigger must also cover resume (Kernel-Power).
+          if (-not ($t.Actions | Where-Object { $_.Arguments -like '*MsCtfMonitor*' -and $_.Arguments -like '*TotalHours*' })) { return $false }
+          [bool]($t.Triggers | Where-Object { $_.Subscription -like '*Kernel-Power*' })
+        SetScript: |
+          # Wait for GoogleIMEJaConverter, then refresh ctfmon only if warranted:
+          # missing, or started before the engine (boot race), or older than 24h
+          # (stale mid-session). A single-quoted here-string keeps the embedded
+          # single quotes (task path) literal; we concatenate rather than use -f
+          # because the payload contains { } braces.
+          $cmd = @'
+          try { $d=(Get-Date).AddSeconds(120); while (-not (Get-Process GoogleIMEJaConverter -ErrorAction SilentlyContinue) -and (Get-Date) -lt $d) { Start-Sleep -Seconds 2 }; Start-Sleep -Seconds 5; $eng = Get-Process GoogleIMEJaConverter -ErrorAction SilentlyContinue | Sort-Object StartTime | Select-Object -First 1; $ctf = Get-Process ctfmon -ErrorAction SilentlyContinue | Sort-Object StartTime | Select-Object -First 1; $raced = $ctf -and $eng -and ($ctf.StartTime -lt $eng.StartTime); $stale = $ctf -and ((New-TimeSpan -Start $ctf.StartTime).TotalHours -gt 24); if ((-not $ctf) -or $raced -or $stale) { Stop-Process -Name ctfmon -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Start-ScheduledTask -TaskPath '\Microsoft\Windows\TextServicesFramework\' -TaskName MsCtfMonitor } } catch {}
+          '@
+          $arg = '-NoProfile -WindowStyle Hidden -Command "' + $cmd.Trim() + '"'
+          $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arg
+          # Two triggers: at logon (boot race) and on resume (Kernel-Power 507/107,
+          # for the long-uptime wedge). Event trigger has no New-ScheduledTaskTrigger
+          # form, so build it as an MSFT_TaskEventTrigger CIM instance.
+          $tLogon  = New-ScheduledTaskTrigger -AtLogOn
+          $class   = Get-CimClass -Namespace ROOT\Microsoft\Windows\TaskScheduler -ClassName MSFT_TaskEventTrigger
+          $tResume = New-CimInstance -CimClass $class -ClientOnly
+          $tResume.Enabled = $true
+          $tResume.Subscription = "<QueryList><Query Id='0' Path='System'><Select Path='System'>*[System[(Provider[@Name='Microsoft-Windows-Kernel-Power'] and (EventID=507 or EventID=107)) or (Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and (EventID=1))]]</Select></Query></QueryList>"
+          # Highest: needed to kill ctfmon and trigger MsCtfMonitor. ctfmon itself is
+          # NOT started here -- MsCtfMonitor respawns it at the correct integrity.
+          $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
+          $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+          Register-ScheduledTask -TaskName 'ime-ctfmon-relaunch' -Action $action -Trigger $tLogon, $tResume -Principal $principal -Settings $settings -Force
 
     # ---- WSL networking ----
     # Deploy .wslconfig (networkingMode=mirrored) from this repo to %UserProfile%.
