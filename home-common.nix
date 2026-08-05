@@ -779,6 +779,35 @@ in
     mouse = true;
     prefix = "C-t";
     terminal = "tmux-256color";
+
+    # セッション構成の保存・復元。tmux server は起動時のバイナリを掴み続けるので、
+    # tmux 自体を更新するにも server のメモリを解放するにも kill-server が要る。
+    # そのとき窓割り・ペイン・作業ディレクトリを失わないための保険。
+    #
+    # 保存: C-t C-s / 復元: C-t C-r (continuum が 15 分ごとに自動保存もする)
+    # 自動復元 (@continuum-restore) は入れていない。tmux を起動しただけで
+    # 各ペインの claude が勝手に立ち上がると事故になるため、復元は明示操作にする。
+    plugins = with pkgs.tmuxPlugins; [
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          set -g @resurrect-capture-pane-contents 'on'
+
+          # claude を復元対象にする。~ は「コマンド名を含む」前方一致で、
+          # `claude -c` のように引数つきで動いているペインも拾う。
+          # -> の右が復元時に実行するコマンド。素の `claude` だと新規会話に
+          # なってしまうので --resume でその作業ディレクトリの会話を選ばせる。
+          set -g @resurrect-processes '"~claude->claude --resume"'
+        '';
+      }
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-save-interval '15'
+        '';
+      }
+    ];
+
     extraConfig = ''
       # Claude Code compatibility (https://code.claude.com/docs/en/terminal-config)
       # - allow-passthrough: let notifications/progress reach the outer terminal
