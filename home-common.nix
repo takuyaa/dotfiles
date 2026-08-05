@@ -46,15 +46,6 @@ let
     };
   };
 
-  # nixpkgs の livekit-cli は src ハッシュが古く（v2.16.4 の上流コンテンツが
-  # 貼り直され実体が変わったため）FOD のハッシュ不整合でビルドできない。
-  # 実体の正しいハッシュに上書きする。nixpkgs 側が修正されたらこの override は削除可。
-  livekit-cli = pkgs.livekit-cli.overrideAttrs (old: {
-    src = old.src.overrideAttrs (_: {
-      outputHash = "sha256-037Llh88/OsmhCXdJj5QQ+qMo5e+/d2HMdJx4HwiTrw=";
-    });
-  });
-
   # Auto-balance panes: even-horizontal for <=3 panes, tiled for 4+.
   # Shared by the split/exit hooks and the kill-pane binding so the layout
   # logic stays in one place.
