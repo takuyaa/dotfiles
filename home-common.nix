@@ -550,6 +550,15 @@ in
             type = "command";
             command = "echo '{\"cwd\": \"'\"$(pwd)\"'\", \"notification_type\": \"idle_prompt\"}' | ~/.claude/notify.sh";
           }];
+        } {
+          # Block `git push --force` / `-f`; `--force-with-lease` and
+          # `--force-if-includes` stay allowed since they check the remote
+          # ref before overwriting.
+          matcher = "Bash";
+          hooks = [{
+            type = "command";
+            command = ''jq -r '.tool_input.command // empty' | { cmd=$(cat); if printf '%s' "$cmd" | grep -Eq '\bgit[[:space:]]+push\b' && printf '%s' "$cmd" | grep -Eq -- '(^|[[:space:]])(--force|-f)([[:space:]]|$)'; then echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"git push --force / -f はハーネスでブロックされています。安全な --force-with-lease を使うか、必要な場合は手動のターミナルで実行してください。"}}'; fi; }'';
+          }];
         }];
         Stop = [{
           matcher = "";
