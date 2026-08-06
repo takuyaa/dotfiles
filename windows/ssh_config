@@ -1,0 +1,26 @@
+# Windows OpenSSH client config — deployed to %UserProfile%\.ssh\config by
+# configuration.dsc.yaml. Source of truth lives in the dotfiles repo; do not
+# edit the deployed copy directly.
+#
+# Keep this in sync by hand with `programs.ssh.settings` in home-linux.nix,
+# which generates the WSL-side ~/.ssh/config. The two are separate SSH clients
+# (Windows ssh.exe vs. the Nix one inside WSL) reading separate files, so a
+# change here does not propagate there, or vice versa.
+#
+# `dev` is reached over Tailscale; WSL gets to the same tailnet through
+# networkingMode=mirrored in windows/wslconfig.
+
+Host 10.0.*.*
+  IdentityFile ~/.ssh/id_ed25519
+  User ubuntu
+
+Host dev
+  HostName 100.120.98.107
+  IdentityFile ~/.ssh/id_ed25519
+  User takuya-a
+
+Host *
+  AddKeysToAgent yes
+  Ciphers +aes256-cbc
+  SendEnv LANG LC_*
+  VisualHostKey yes

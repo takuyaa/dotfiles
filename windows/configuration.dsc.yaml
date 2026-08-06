@@ -610,3 +610,50 @@ properties:
           $src = 'C:\Users\takuy\dotfiles\windows\wslconfig'
           $dst = "$env:USERPROFILE\.wslconfig"
           Copy-Item -Path $src -Destination $dst -Force
+
+    # ---- SSH ----
+    # Run the Windows OpenSSH authentication agent at boot. Ships Disabled by
+    # default, which breaks VS Code Remote-SSH against a passphrase-protected
+    # key: the extension pipes its bootstrap script into ssh.exe's stdin
+    # (`type ...sh | ssh.exe -T -D <port> dev sh`), so the passphrase prompt
+    # gets an empty string back and the connection dies with
+    # "Permission denied (publickey)" even though the server accepted the key.
+    # With the agent running, `AddKeysToAgent yes` (see windows/ssh_config)
+    # unlocks the key once and there is no prompt left to mishandle.
+    #
+    # The key itself is NOT managed here: `ssh-add` needs the passphrase typed
+    # interactively, and the result is DPAPI-encrypted into
+    # HKCU\Software\OpenSSH\Agent\Keys. On a fresh machine, run `ssh dev` once
+    # from a terminal and enter the passphrase; the agent caches it across
+    # reboots from then on.
+    - resource: PSDscResources/Service
+      id: ssh-agent
+      directives:
+        description: Run the Windows OpenSSH authentication agent at boot
+      settings:
+        Name: ssh-agent
+        StartupType: Automatic
+        State: Running
+
+    # Deploy the SSH client config to %UserProfile%\.ssh\config. ssh.exe only
+    # reads it from that fixed path, so we copy rather than reference the repo
+    # path. The source of truth is windows/ssh_config, which must be kept in
+    # sync by hand with `programs.ssh.settings` in home-linux.nix (the WSL-side
+    # client is a different binary reading a different file).
+    - resource: PSDscResources/Script
+      id: ssh-config
+      directives:
+        description: Deploy the SSH client config to the user profile
+      settings:
+        GetScript: |
+          @{ Result = (Get-Content -Raw "$env:USERPROFILE\.ssh\config" -ErrorAction SilentlyContinue) }
+        TestScript: |
+          $src = 'C:\Users\takuy\dotfiles\windows\ssh_config'
+          $dst = "$env:USERPROFILE\.ssh\config"
+          if (-not (Test-Path $dst)) { return $false }
+          (Get-FileHash $src).Hash -eq (Get-FileHash $dst).Hash
+        SetScript: |
+          $src = 'C:\Users\takuy\dotfiles\windows\ssh_config'
+          $dst = "$env:USERPROFILE\.ssh\config"
+          New-Item -ItemType Directory -Path (Split-Path $dst) -Force | Out-Null
+          Copy-Item -Path $src -Destination $dst -Force
