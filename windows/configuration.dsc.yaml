@@ -563,7 +563,12 @@ properties:
           # Action must relaunch via MsCtfMonitor AND be the age-guarded version
           # (TotalHours check); a trigger must also cover resume (Kernel-Power).
           if (-not ($t.Actions | Where-Object { $_.Arguments -like '*MsCtfMonitor*' -and $_.Arguments -like '*TotalHours*' })) { return $false }
-          [bool]($t.Triggers | Where-Object { $_.Subscription -like '*Kernel-Power*' })
+          # Guard the property lookup: Triggers mixes CIM types, and only
+          # MSFT_TaskEventTrigger carries Subscription. The logon trigger does
+          # not, and the DSC engine runs this under StrictMode, where touching
+          # a missing property throws PropertyNotFoundException instead of
+          # yielding $null -- which failed the whole unit.
+          [bool]($t.Triggers | Where-Object { $_.PSObject.Properties.Name -contains 'Subscription' -and $_.Subscription -like '*Kernel-Power*' })
         SetScript: |
           # Wait for GoogleIMEJaConverter, then refresh ctfmon only if warranted:
           # missing, or started before the engine (boot race), or older than 24h
