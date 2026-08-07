@@ -455,6 +455,22 @@ in
     '';
   };
 
+  # 無変換 is remapped to F13 by kanata (see windows/kanata.kbd). Inside a
+  # terminal the Windows IME never sees it, so the raw F13 escape sequence
+  # reaches readline, which consumes the prefix and self-inserts the final byte
+  # ("R" in dev containers, "~" under WSL). Bind the full sequences to an empty
+  # macro so the key does nothing instead.
+  #
+  # Kept in ~/.inputrc rather than bash's initExtra so it also covers other
+  # readline consumers (python, psql, …) and travels as a single file.
+  programs.readline = {
+    enable = true;
+    extraConfig = ''
+      "\e[1;2R": ""
+      "\e[25~": ""
+    '';
+  };
+
   xdg.configFile = {
     "nix/nix.conf".text = ''
       experimental-features = nix-command flakes
