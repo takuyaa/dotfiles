@@ -128,7 +128,7 @@ git pull
 
 タップは Muhenkan/Henkan ではなく **F13 / F14**（レイアウト非依存）を送ります。
 US 配列では Muhenkan/Henkan のスキャンコードが仮想キーに変換されず、IME に届かない
-ためです。F13/F14 は `keymap.txt` で IME OFF / ON に割り当てています。
+ためです。F13/F14 は `../ime/keymap.txt` で IME OFF / ON に割り当てています。
 
 矢印（h j k l → ←↓↑→）は変換側 NUMS レイヤーのみ。無変換側はモディファイア専用なので
 無変換+h/j/k/l は Ctrl+H/J/K/L になります。
@@ -225,27 +225,34 @@ Win キーは素のままなので、Win+L / Win+D / Win+E / Win+1〜9 などの
 
 ## 手動の後処理ステップ 2: Google 日本語入力のキーマップ
 
-`keymap.txt`（宣言的なソース）をインポートします。タスクトレイのアイコン →
+`../ime/keymap.txt`（宣言的なソース。macOS と共有）をインポートします。タスクトレイのアイコン →
 プロパティ → 一般 → 「キー設定の選択」 → **編集** → エディタのメニューで
-**ファイルからインポート…** → `keymap.txt` を選択 → 「キー設定の選択」を
+**ファイルからインポート…** → `../ime/keymap.txt` を選択 → 「キー設定の選択」を
 **カスタム** にして OK → 適用。
 
 `keymap.txt` について: Mozc のインポートは**キーマップ全体を置換**するため、
 ファイルは差分だけでなく*完全な*キーマップである必要があります。これは
-**MS-IME** ベースの完全なキーマップに、親指キー（F13/F14）の行だけを変更した
-ものです。
+**MS-IME** ベースの完全なキーマップに、切り替えキーの行だけを変更したものです。
+ファイルは macOS と共有していて（`../ime/README.md`）、下表の Windows 用の行と
+macOS 用の 英数/かな の行が同居しています。macOS 用の行は Windows では発火しない
+ので互いに干渉しません。
 
 | モード | キー | コマンド |
 |--------|------|----------|
 | DirectInput | F14 | IMEOn（→ かな。IME をオンにする） |
 | Precomposition | F14 | CompositionModeHiragana（→ ひらがな） |
-| DirectInput / Precomposition / Composition / Conversion | F13 | IMEOff（→ 英数） |
+| Precomposition / Composition / Conversion | F13 | IMEOff（→ 英数） |
+| DirectInput | Ctrl Shift j | IMEOn（親指キーが無いとき用の保険。Windows 側は未検証） |
+| Precomposition / Composition / Conversion | Ctrl Shift ; | IMEOff（同上） |
 
 DirectInput では `CompositionModeHiragana` ではなく `IMEOn` が必要です。
 composition 系のコマンドは IME がすでにオンのときしか効きません。
 
+`Ctrl Shift j` / `Ctrl Shift ;` は macOS では機能しないことが確認されています
+（`../ime/README.md` 参照）。Windows で効くかどうかは未検証です。
+
 割り当てを変えるときは GUI で編集し、**ファイルにエクスポート…**で
-`keymap.txt` を上書きしてください（数行に手で削らないこと。標準キーが消えます）。
+`../ime/keymap.txt` を上書きしてください（数行に手で削らないこと。標準キーが消えます）。
 ATOK/ことえりベースに作り直すときは、そのプリセットを再インポートし、上記 2 つの
 上書きを当て直してからエクスポートします。
 
@@ -255,7 +262,7 @@ ATOK/ことえりベースに作り直すときは、そのプリセットを再
 
 トラブルシュート: 変換中に Backspace / Enter / Space が効かなくなった場合、
 アクティブなキーマップが部分的なもの（数エントリのみ）になっています。短い
-ファイルをインポートして全体が置換された状態です。完全な `keymap.txt`（163 行）
+ファイルをインポートして全体が置換された状態です。完全な `keymap.txt`（170 行）
 を入れ直すか、まず MS-IME プリセットを選んで標準に戻してください。
 
 ## 手動の後処理ステップ 3: kanata の動作確認

@@ -12,6 +12,10 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
   LibreOffice headless and verify every font is embedded; refuses to run if the deck
   font `BIZ UDPGothic` is missing, to prevent silent glyph substitution
 
+`git add` any new file before `rebuild`. Flakes only see Git-tracked paths, so a
+file referenced from a `.nix` expression fails evaluation while it is untracked —
+staging is enough, no commit needed.
+
 ## Layout
 
 - `flake.nix` — inputs and outputs (macOS + Linux)
@@ -20,6 +24,7 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `home-darwin.nix` / `home-linux.nix` — OS-specific overrides
 - `skills/` — vendor-neutral [Agent Skills](https://agentskills.io) (open standard: `SKILL.md` folders, portable across Claude Code, Codex, Cursor, opencode, …). These are the canonical copies; `home-common.nix` symlinks each `skills/<name>` read-only into every consuming agent's discovery path. Today only Claude Code (`~/.claude/skills/<name>`); other tools are one extra symlink line. Add a directory plus a `home.file` line, then `rebuild`. Upstream skills are pulled instead from flake inputs (`agent-skills` = `anthropics/skills`, Apache-2.0; `mattpocock-skills` = `mattpocock/skills`, MIT — source of `grill-me` + `grilling`), pinned in `flake.lock` and symlinked from the Nix store — nothing is vendored, so nothing is redistributed; add one by symlinking another `skills/<name>` subdir of an input in `home-common.nix`.
 - `windows/` — Windows host config (winget DSC + kanata + Google Japanese IME); applied with `winget configure`, not Nix
+- `ime/` — Google Japanese IME config shared by macOS and Windows. `keymap.txt` is one complete Mozc keymap used by **both** OSes (the Windows rows key off `F13`/`F14`, the macOS rows off `Eisu`/`Hiragana`, and each is inert on the other OS); it is imported by hand through the IME GUI, since the on-disk config is a binary DB. `karabiner-ime-switch.json` maps left/right ⌘ taps to 英数/かな on the US MacBook layout and is symlinked into Karabiner's `assets/complex_modifications/` by `home-darwin.nix` — enable it once in the GUI, and re-enable after editing. See `ime/README.md`.
 - `fonts/biz-udp/` — vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) shared by both OSes; installed via `home-linux.nix` (Nix) and `windows/configuration.dsc.yaml` (DSC)
 
 Roll back a bad macOS rebuild with `darwin-rebuild switch --rollback`.

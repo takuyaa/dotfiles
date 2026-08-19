@@ -29,7 +29,7 @@ Composition	Ctrl x	MoveCursorToEnd
 Composition	Ctrl z	Cancel
 Composition	Delete	Delete
 Composition	Down	MoveCursorToEnd
-Composition	Eisu	ToggleAlphanumericMode
+Composition	Eisu	IMEOff
 Composition	End	MoveCursorToEnd
 Composition	Enter	Commit
 Composition	ESC	Cancel
@@ -90,7 +90,7 @@ Conversion	Ctrl x	ConvertNext
 Conversion	Ctrl z	Cancel
 Conversion	Delete	Cancel
 Conversion	Down	ConvertNext
-Conversion	Eisu	ToggleAlphanumericMode
+Conversion	Eisu	IMEOff
 Conversion	End	SegmentFocusLast
 Conversion	Enter	Commit
 Conversion	ESC	Cancel
@@ -130,7 +130,6 @@ Conversion	Up	ConvertPrev
 Conversion	VirtualLeft	SegmentWidthShrink
 Conversion	VirtualRight	SegmentWidthExpand
 Conversion	VirtualEnter	CommitOnlyFirstSegment
-DirectInput	Eisu	IMEOn
 DirectInput	F13	IMEOff
 DirectInput	Hankaku/Zenkaku	IMEOn
 DirectInput	Henkan	Reconvert
@@ -142,7 +141,7 @@ Precomposition	ASCII	InsertCharacter
 Precomposition	Backspace	Revert
 Precomposition	Ctrl Backspace	Undo
 Precomposition	Ctrl Shift Space	InsertFullSpace
-Precomposition	Eisu	ToggleAlphanumericMode
+Precomposition	Eisu	IMEOff
 Precomposition	Hankaku/Zenkaku	IMEOff
 Precomposition	Hiragana	CompositionModeHiragana
 Precomposition	Henkan	Reconvert
@@ -162,3 +161,10 @@ Precomposition	F13	IMEOff
 Precomposition	F14	CompositionModeHiragana
 Composition	F13	IMEOff
 Conversion	F13	IMEOff
+DirectInput	Ctrl Shift j	IMEOn
+Precomposition	Ctrl Shift j	CompositionModeHiragana
+Composition	Ctrl Shift j	CompositionModeHiragana
+Conversion	Ctrl Shift j	CompositionModeHiragana
+Precomposition	Ctrl Shift ;	IMEOff
+Composition	Ctrl Shift ;	IMEOff
+Conversion	Ctrl Shift ;	IMEOff

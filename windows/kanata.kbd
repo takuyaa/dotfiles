@@ -18,7 +18,7 @@
 ;; (00000409), the Muhenkan/Henkan scancodes have no key in that layout and are
 ;; not translated to a VK, so the IME never sees them. F13-F24 are
 ;; layout-independent, so they reach the IME under any layout. Bind them in the
-;; IME: F13 = "IME off / 直接入力", F14 = "ひらがな" (see keymap.txt).
+;; IME: F13 = "IME off / 直接入力", F14 = "ひらがな" (see ../ime/keymap.txt).
 ;;
 ;; Trade-off: putting a hold action on the frequently-tapped 英数 key risks
 ;; "rollover misfire". 無変換 uses tap-hold-press (modifier engages on the next
@@ -33,7 +33,7 @@
 ;; 専用にしたので 無変換+h/j/k/l は Ctrl+H/J/K/L になる。
 ;;
 ;; Pairs with: Windows layout set to US (HKCU Substitutes 00000411->00000409)
-;; for US symbols, and the IME keymap (keymap.txt) binding F13/F14.
+;; for US symbols, and the IME keymap (../ime/keymap.txt) binding F13/F14.
 
 (defcfg
   process-unmapped-keys yes

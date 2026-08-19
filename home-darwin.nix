@@ -131,4 +131,57 @@
       terminal-notifier "''${args[@]}"
     '';
   };
+  # Karabiner-Elements: IME switch rule (US layout thumb keys).
+  # Karabiner rewrites ~/.config/karabiner/karabiner.json itself, so that file
+  # cannot be a read-only Nix symlink. Instead the rule is dropped into the
+  # assets directory, which Karabiner only *reads*; enable it once in the GUI
+  # (Settings -> Complex Modifications -> Add rule). Re-enable after editing.
+  home.file.".config/karabiner/assets/complex_modifications/ime-switch.json".source =
+    ./ime/karabiner-ime-switch.json;
+
+  # Disable the two OS input-source switching shortcuts so the IME owns switching:
+  #   60 = ^Space   "Select the previous input source"
+  #   61 = ^~Space  "Select next source in Input menu"
+  # `ABC` cannot be removed from the input sources (macOS keeps one ASCII-capable
+  # source and Google IME's ひらがな mode is smJapanese), so these shortcuts are the
+  # only way to land on ABC by accident. ^Space also collides with Emacs set-mark.
+  # Mirrors the ime-*-hotkeys entries in windows/configuration.dsc.yaml.
+  #
+  # Deliberately NOT system.defaults.CustomUserPreferences: nix-darwin emits one
+  # `defaults write <domain> <key> <value>` per key, which would replace the whole
+  # AppleSymbolicHotKeys dictionary and drop the ~17 other entries macOS keeps there
+  # (13 of them are stored as enabled=false). `-dict-add` merges a single entry.
+  # The parameters are (ASCII, key code, modifier mask): 32/49 = Space,
+  # 262144 = ^, 786432 = ^~ — i.e. the stock shortcuts, kept but disabled.
+  #
+  # The value has to be XML, not the old-style `{ enabled = 0; ... }` literal: that
+  # syntax has no number/bool type, so everything lands as a string and macOS —
+  # which stores these as real bool/int — does not honour it.
+  home.activation.disableInputSourceHotkeys =
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      hotkey_off() {
+        run /usr/bin/defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys \
+          -dict-add "$1" "
+            <dict>
+              <key>enabled</key><false/>
+              <key>value</key>
+              <dict>
+                <key>type</key><string>standard</string>
+                <key>parameters</key>
+                <array>
+                  <integer>32</integer>
+                  <integer>49</integer>
+                  <integer>$2</integer>
+                </array>
+              </dict>
+            </dict>"
+      }
+
+      hotkey_off 60 262144
+      hotkey_off 61 786432
+
+      # Make the change take effect without a logout (best effort).
+      run /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u \
+        || true
+    '';
 }

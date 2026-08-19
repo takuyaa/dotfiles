@@ -113,6 +113,7 @@ pptx2pdf slides/deck.pptx     # → slides/deck.pdf（全フォント emb=yes �
 ├── home-linux.nix    # Linux-specific config (imports home-common.nix)
 ├── skills/           # Own Agent Skills (agentskills.io); symlinked into ~/.claude/skills/ via home-common.nix (upstream skills come from the agent-skills flake input)
 ├── windows/          # Windows host config (winget DSC + kanata + Google IME); `winget configure`, not Nix
+├── ime/              # Google Japanese IME keymap shared by macOS + Windows, plus the macOS Karabiner IME-switch rule
 ├── fonts/biz-udp/    # Vendored, version-pinned BIZ UDPGothic TTFs (Japanese deck font) for WSL2 + Windows
 ├── Makefile          # Platform-aware rebuild/update targets
 ├── install-darwin.sh  # macOS bootstrap script

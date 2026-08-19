@@ -293,7 +293,7 @@ properties:
     # "LayerDriver JP106 = kbd101.dll" method which only affects PS/2 keyboards.
     # Takes effect after sign-out / sign-in.
     # (IME switching is handled by kanata emitting F13/F14 — layout-independent —
-    #  bound in keymap.txt; see kanata.kbd.)
+    #  bound in ../ime/keymap.txt; see kanata.kbd.)
     - resource: PSDscResources/Registry
       id: kbd-layout-us
       directives:

@@ -53,6 +53,7 @@
       "codex-app"
       "deepl"
       "ghostty"
+      "google-japanese-ime"
       "karabiner-elements"
       "iterm2"
       "lm-studio"
