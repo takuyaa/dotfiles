@@ -6,7 +6,7 @@ Personal development environment configuration using Nix flakes, nix-darwin, and
 
 | Platform | Host | User | Tool |
 |----------|------|------|------|
-| macOS (aarch64-darwin) | — | `takuya.asano` | nix-darwin + Home Manager |
+| macOS (aarch64-darwin) | — | `takuya.asano`, `takuya` | nix-darwin + Home Manager |
 | Linux (x86_64-linux) | dev-01 (Ubuntu 24.04) | `takuya-a` | Home Manager (standalone) |
 | Windows (x86_64)       | this laptop           | `takuy`        | winget configure (`windows/`, not Nix) |
 
@@ -27,6 +27,10 @@ cd dotfiles
 ```
 
 This will install Nix (via Determinate Systems installer), nix-darwin, and apply the initial configuration.
+
+The script (and `make rebuild`) picks the `darwinConfigurations` entry matching the
+logged-in account, via `id -un | tr . -`. To onboard another Mac account, add it to
+`darwinHosts` in `flake.nix` with its login name and uid (`id -u <name>`).
 
 ### Linux (dev-01)
 

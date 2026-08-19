@@ -22,9 +22,14 @@ install_nix_darwin() {
         return 0
     fi
 
-    echo "Installing nix-darwin..."
-    # sudo nix --extra-experimental-features 'flakes nix-command' run nix-darwin -- switch --flake .#macos
-    sudo nix --extra-experimental-features 'flakes nix-command' run nix-darwin/nix-darwin-25.05#darwin-rebuild -- switch --flake .#macos
+    # The darwinConfigurations entry for this account (see flake.nix).
+    # Resolved before sudo, so it is the real user, not root.
+    local host
+    host="$(id -un | tr . -)"
+
+    echo "Installing nix-darwin for '${host}'..."
+    # sudo nix --extra-experimental-features 'flakes nix-command' run nix-darwin -- switch --flake ".#${host}"
+    sudo nix --extra-experimental-features 'flakes nix-command' run nix-darwin/nix-darwin-25.05#darwin-rebuild -- switch --flake ".#${host}"
 }
 
 fix_homebrew_taps_permissions() {

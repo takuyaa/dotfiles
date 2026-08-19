@@ -24,6 +24,19 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 
 Roll back a bad macOS rebuild with `darwin-rebuild switch --rollback`.
 
+## This repository is public
+
+Keep employer- and machine-specific details out of it — that includes commit
+messages, which should describe the change without naming internal hosts,
+accounts, or organisations.
+
+Work identities are configured out-of-tree instead: `programs.git.includes`
+pulls in the untracked `~/.config/git/config.local`, and any per-employer
+`includeIf "gitdir:…"` rules (address, signing key, `allowedSignersFile`) live
+there or in the files it includes. Nothing here needs to know they exist. The
+trade-off is that those files are outside Nix, so a new machine needs them
+recreated by hand.
+
 ## Claude-powered git aliases
 
 `home-common.nix` defines git aliases that call `claude` to generate text:

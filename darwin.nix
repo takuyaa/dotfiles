@@ -1,4 +1,4 @@
-{ self, system, username, userHome, homebrew-core, homebrew-cask, homebrew-bundle }:
+{ self, system, username, userHome, uid, homebrew-core, homebrew-cask, homebrew-bundle }:
 { pkgs, ... }:
 
 {
@@ -45,6 +45,7 @@
     };
     casks = [
       "font-plemol-jp-nf"
+      "1password"
       "android-studio"
       "blackhole-2ch"
       "chatgpt"
@@ -77,7 +78,7 @@
     name = username;
     home = userHome;
     shell = pkgs.bash;
-    uid = 502;
+    inherit uid;
   };
 
   # Set Git commit hash for darwin-version

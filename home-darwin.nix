@@ -62,6 +62,22 @@
   # SSH: use macOS Keychain for passphrase storage
   programs.ssh.settings."*".UseKeychain = "yes";
 
+  # SSH: serve keys from 1Password's agent instead of on-disk private keys.
+  # The socket path has spaces, so the quotes are part of the ssh_config value.
+  # Enabling the agent itself is a 1Password app setting (Settings → Developer
+  # → Use the SSH agent) and cannot be declared here.
+  programs.ssh.settings."*".IdentityAgent =
+    ''"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'';
+
+  # Git commit signing through 1Password. There is no private key on disk here,
+  # so the signing key has to be the public key literal (git then passes -U and
+  # lets the agent hold the private half) rather than the path home-common.nix
+  # uses on Linux.
+  programs.git.signing = {
+    key = lib.mkForce "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHUUYK9l21+ujAg7PUQ//XNSVeN9xJ255HkBIyfWkBw4";
+    signer = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign";
+  };
+
   # Claude statusline script
   home.file.".claude/statusline-command.sh" = {
     executable = true;

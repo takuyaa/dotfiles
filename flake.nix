@@ -74,15 +74,35 @@
     mattpocock-skills,
   }: let
     system = "aarch64-darwin"; # For Apple Silicon Macs (use "x86_64-darwin" for Intel Macs)
-    username = "takuya.asano";
-    userHome = "/Users/${username}";
-  in {
-    # macOS configuration
-    darwinConfigurations = {
-      "macos" = nix-darwin.lib.darwinSystem {
+
+    # macOS accounts this flake knows how to build for. Flake evaluation is
+    # pure, so the login name cannot be read from the environment — instead
+    # each account gets its own `darwinConfigurations` entry and the Makefile
+    # and install-darwin.sh select it with `id -un | tr . -`. Keys are the
+    # login name with `.` replaced by `-`, because flake attribute paths split
+    # on `.`. `userHome` is derived; only the uid of the existing account has
+    # to be recorded here (`id -u <name>`).
+    darwinHosts = {
+      "takuya-asano" = {
+        username = "takuya.asano";
+        uid = 502;
+      };
+      "takuya" = {
+        username = "takuya";
+        uid = 501;
+      };
+    };
+
+    mkDarwinSystem = _key: {
+      username,
+      uid,
+    }: let
+      userHome = "/Users/${username}";
+    in
+      nix-darwin.lib.darwinSystem {
         modules = [
           (import ./darwin.nix {
-            inherit self system username userHome homebrew-core homebrew-cask homebrew-bundle;
+            inherit self system username userHome uid homebrew-core homebrew-cask homebrew-bundle;
           })
 
           nix-homebrew.darwinModules.nix-homebrew
@@ -102,7 +122,9 @@
           }
         ];
       };
-    };
+  in {
+    # macOS configuration
+    darwinConfigurations = builtins.mapAttrs mkDarwinSystem darwinHosts;
 
     # Linux standalone home-manager configuration
     homeConfigurations = {
