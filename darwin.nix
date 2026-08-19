@@ -40,9 +40,6 @@
       "pam-reattach"
       "pipedreamhq/pd-cli/pipedream"
     ];
-    masApps = {
-      "Amphetamine" = 937984704;
-    };
     casks = [
       "font-plemol-jp-nf"
       "1password"
