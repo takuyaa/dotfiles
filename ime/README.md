@@ -109,6 +109,57 @@ Karabiner は `~/.config/karabiner/karabiner.json` を自分で書き換える�
 編集したら、GUI でルールを削除して追加し直す**必要があります（有効化時に内容が
 `karabiner.json` へコピーされるため）。
 
+`rebuild` は assets 側の symlink を更新するだけで、`karabiner.json` の中の**コピーは
+古いまま**です。しかも GUI 上の表示は description しか見せないので、有効なままに
+見えて中身だけが数世代前、という状態に気づけません。挙動が README と食い違ったら、
+まず両者を突き合わせてください。
+
+```sh
+diff <(jq -S '.rules[0].manipulators' ~/.config/karabiner/assets/complex_modifications/ime-switch.json) \
+     <(jq -S '.profiles[] | select(.selected).complex_modifications.rules[0].manipulators' ~/.config/karabiner/karabiner.json)
+```
+
+差分が出たら、GUI でルールを削除して追加し直せば同期します。
+
+### 2.5. 外付けキーボード（QMK / NKRO）を掴ませる
+
+**Keychron Q11 のような QMK キーボードでは、これをやらないと ⌘ タップが効きません。**
+内蔵キーボードだけは効くのに外付けだけ無反応、という形で出ます。
+
+QMK は NKRO のために、キーボードとは別に shared endpoint を公開します。これは
+Mouse / Pointer / System Control / Consumer / **Keyboard** を 1 つにまとめたもので、
+primary usage が Mouse (1:2) になっています。NKRO が有効なとき、キー入力はこちらを
+通ります。Karabiner は primary usage を見てポインティングデバイスと判定し、既定では
+掴みません。掴んでいないデバイスのイベントは manipulator を通らないので、
+`to_if_alone` は評価すらされず、⌘ は素の ⌘ として素通しされます。
+
+紛らわしいのは、**Karabiner-EventViewer には `left_command` と表示される**ことです。
+EventViewer は掴んでいないデバイスも観測するため、「キーは正しく送られている」ように
+見えてしまいます。切り分けにはログの方を見てください。同じデバイス名で
+`caps lock is found` が 2 回出ているのに `(grabbed)` が 1 回しか無ければ、これです。
+
+```sh
+grep Keychron /var/log/karabiner/core_service.log
+```
+
+Settings → **Devices** で Keychron Q11 の行が 2 つ出るので、**マウスとして表示されて
+いる方の Modify events にチェック**を入れます。これで `karabiner.json` に次のエントリが
+入り、shared endpoint も掴まれるようになります（`is_keyboard` と `is_pointing_device`
+が両方 true なのが shared endpoint の目印。`13364` = 0x3434 Keychron、`480` = Q11）。
+
+```json
+{ "identifiers": { "is_keyboard": true, "is_pointing_device": true,
+                   "product_id": 480, "vendor_id": 13364 },
+  "ignore": false }
+```
+
+ルールと同じく `karabiner.json` 側の状態なので、Nix では管理できず、マシンを移ったら
+やり直しになります。
+
+Q11 側の NKRO を切る（Keychron Launcher / VIA で `NK_OFF` を割り当てて押す）でも
+解決します。キーボードレポートが標準のエンドポイントに戻るので Karabiner 側は既定の
+ままで動きます。失うのは n キーロールオーバーだけです。
+
 ### 3. 入力ソースを Google 日本語入力だけにする
 
 **先にログアウトして入り直すこと。** cask でインストールした直後は macOS の入力
@@ -175,7 +226,8 @@ Windows 側で言語切替ホットキーを無効化している（`configurati
 
 | 項目 | 結果 |
 |------|------|
-| 左⌘タップ → 英数 / 右⌘タップ → かな | **動作** |
+| 左⌘タップ → 英数 / 右⌘タップ → かな（内蔵） | **動作** |
+| 同上（外付け Keychron Q11） | **動作**（§2.5 の Modify events が必要） |
 | ⌘+C / ⌘+V / ⌘+Tab（ホールド時） | **動作**（タップ判定 200ms に取られない） |
 | 変換中の Backspace / Enter / Space | **動作**（キーマップ全体が正しく置換されている証拠） |
 | `Ctrl+Shift+J` / `Ctrl+Shift+;` | **動作しない**（原因未特定） |
