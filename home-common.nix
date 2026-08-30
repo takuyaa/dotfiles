@@ -692,7 +692,7 @@ in
       };
       language = "japanese";
       sandbox = {
-        enabled = pkgs.stdenv.isDarwin;  # bwrap unusable in unprivileged k8s pod
+        enabled = pkgs.stdenv.hostPlatform.isDarwin;  # bwrap unusable in unprivileged k8s pod
         allowUnsandboxedCommands = false;
         enableWeakerNetworkIsolation = true;
         # サンドボックスの書き込み許可はカレントディレクトリと $TMPDIR だけなので、
