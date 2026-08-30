@@ -101,6 +101,34 @@ PDF として配布するためのフォント整備と変換ツール。
 pptx2pdf slides/deck.pptx     # → slides/deck.pdf（全フォント emb=yes を検証）
 ```
 
+## Karabiner-Elements (macOS): manual setup
+
+Karabiner rewrites `~/.config/karabiner/karabiner.json` itself, so that file cannot be a
+read-only Nix symlink. Everything below is GUI state that has to be redone by hand on a
+new machine. Nix only places the rule file under `assets/`, which Karabiner just reads.
+
+| # | Where | What | Why |
+|---|-------|------|-----|
+| 1 | System Settings → Privacy & Security | Grant Input Monitoring, approve the DriverKit extension | Karabiner cannot grab any device without it |
+| 2 | Settings → Complex Modifications | Enable "IME switch (dotfiles)" | Command taps → 英数/かな. Enabling **copies** the rule body into `karabiner.json`; re-add it after editing `ime/karabiner-ime-switch.json` |
+| 3 | Settings → Devices | Tick "Modify events" on the Keychron Q11 row that lists as a mouse | QMK routes NKRO key reports through a shared endpoint whose primary usage is Mouse; Karabiner ignores pointing devices by default, so those keys never reach a manipulator |
+| 4 | Settings → Devices | Tick "Modify events" + "Flip vertical wheel" on the Logitech `USB Receiver` | Reverses the wheel on the external mouse only. macOS has a single `com.apple.swipescrolldirection` shared by trackpad and mouse, so the OS setting would flip the trackpad too |
+
+Steps 3 and 4 produce these entries, which are worth diffing against when something stops
+working (`is_keyboard` **and** `is_pointing_device` both true is the mark of a QMK shared
+endpoint; `13364`/`480` = Keychron Q11, `1133`/`50489` = Logitech Lightspeed receiver):
+
+```json
+{ "identifiers": { "is_keyboard": true, "is_pointing_device": true,
+                   "product_id": 480, "vendor_id": 13364 },
+  "ignore": false }
+{ "identifiers": { "is_pointing_device": true, "product_id": 50489, "vendor_id": 1133 },
+  "ignore": false, "mouse_flip_vertical_wheel": true }
+```
+
+Steps 2 and 3 are covered in detail, with the symptoms and the commands to diagnose them,
+in [`ime/README.md`](./ime/README.md).
+
 ## File Structure
 
 ```text
