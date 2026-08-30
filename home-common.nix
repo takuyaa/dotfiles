@@ -558,6 +558,9 @@ in
       enableAllProjectMcpServers = true;
       env = {
         ENABLE_TOOL_SEARCH = "true";
+        # 実体の settings.json に手で入っていた値を宣言側に取り込んだもの。
+        # 自動コンパクト前に使うコンテキスト幅（トークン）。
+        CLAUDE_CODE_AUTO_COMPACT_WINDOW = "300000";
       };
       hooks = {
         PreToolUse = [{
