@@ -686,6 +686,21 @@ in
         enabled = pkgs.stdenv.isDarwin;  # bwrap unusable in unprivileged k8s pod
         allowUnsandboxedCommands = false;
         enableWeakerNetworkIsolation = true;
+        # サンドボックスの書き込み許可はカレントディレクトリと $TMPDIR だけなので、
+        # 共有キャッシュをホームに持つパッケージマネージャはここで個別に開ける。
+        # 開けないと uv は "Operation not permitted" で落ち、pnpm はグローバル
+        # ストアを諦めてリポジトリ内に .pnpm-store を作ってしまう。
+        filesystem = {
+          allowWrite = [
+            "~/.cache/uv"           # uv: wheel / パッケージキャッシュ
+            "~/.local/share/uv"     # uv python install, uv tool install
+            "~/Library/pnpm"        # pnpm: content-addressable store, global bin
+            "~/Library/Caches/pnpm" # pnpm: メタデータキャッシュ
+            "~/.npm"                # npm/npx: _cacache（difit や playwright ラッパーが使う）
+            "~/.npm-global"         # npm -g の prefix（NPM_CONFIG_PREFIX）
+            "~/.cache/nix"          # nix flake check / nix eval の fetcher lock と eval キャッシュ
+          ];
+        };
         network = {
           allowAllUnixSockets = true;
         };
