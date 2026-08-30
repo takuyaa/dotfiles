@@ -561,6 +561,12 @@ in
         # 実体の settings.json に手で入っていた値を宣言側に取り込んだもの。
         # 自動コンパクト前に使うコンテキスト幅（トークン）。
         CLAUDE_CODE_AUTO_COMPACT_WINDOW = "300000";
+        # Determinate Nix は sentry-native 経由で毎回 crashpad_handler を起動する。
+        # Seatbelt が Mach サービス登録を拒むため、サンドボックス内で nix を叩く
+        # たびに bootstrap_check_in の ERROR/FATAL が出る（動作自体は無害）。
+        # 空にするとレポータを起動しなくなる。nix.conf の設定では効かず、
+        # 環境変数のみが効く。素のターミナル側の挙動はここでは変えない。
+        NIX_SENTRY_ENDPOINT = "";
       };
       hooks = {
         PreToolUse = [{
