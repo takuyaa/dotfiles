@@ -117,6 +117,7 @@ in
     tre
 
     # Programming languages
+    bun
     go
     jdk
     nodejs_22
@@ -724,6 +725,7 @@ in
             "~/Library/Caches/pnpm" # pnpm: メタデータキャッシュ
             "~/.npm"                # npm/npx: _cacache（difit や playwright ラッパーが使う）
             "~/.npm-global"         # npm -g の prefix（NPM_CONFIG_PREFIX）
+            "~/.bun"                # bun: install キャッシュとグローバル bin
             "~/.cache/nix"          # nix flake check / nix eval の fetcher lock と eval キャッシュ
           ];
         };
