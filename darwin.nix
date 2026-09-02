@@ -47,6 +47,7 @@
       "blackhole-2ch"
       "chatgpt"
       "claude"
+      "clocker"
       "codex-app"
       "deepl"
       "ghostty"
