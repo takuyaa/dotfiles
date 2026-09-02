@@ -556,6 +556,23 @@ in
       tui = "fullscreen";
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
+      # プラグインは宣言的に有効化する。`claude plugin ...` や `/plugin` は
+      # 有効化状態を settings.json に書き戻そうとするが、このファイルは Nix
+      # ストアへの読み取り専用シンボリックリンクなので、CLI が隣に作る一時
+      # ファイル（settings.json.tmp.*）の作成が EACCES で失敗する。
+      # `wt config plugins claude install` が落ちるのはこれが理由。
+      # マーケットプレースの実体は起動時に ~/.claude/plugins/ 以下へ
+      # クローンされる。そこは Nix 管理外なので書き込みできる。
+      extraKnownMarketplaces = {
+        worktrunk.source = {
+          source = "github";
+          repo = "max-sixty/worktrunk";
+        };
+      };
+      # キーは "<plugin-id>@<marketplace-id>"。
+      enabledPlugins = {
+        "worktrunk@worktrunk" = true;
+      };
       env = {
         ENABLE_TOOL_SEARCH = "true";
         # 実体の settings.json に手で入っていた値を宣言側に取り込んだもの。
@@ -714,9 +731,16 @@ in
           allowAllUnixSockets = true;
         };
       };
+      # worktrunk のステータスライン。ディレクトリ・ブランチ・作業ツリーの
+      # 汚れ具合・diff 行数・モデル名・コンテキスト残量・レート制限のペース
+      # 通知を 1 行で出す（`wt list` と同じセルを使う）。CI の取得で 1〜2 秒
+      # かかることがあるが、Claude Code はこれをバックグラウンドで動かすので
+      # 入力はブロックされない。自作の statusline-command.sh を置き換えた。
+      # `wt config plugins claude install-statusline` は settings.json を
+      # 直接書き換えようとして EACCES で失敗するため、ここで宣言する。
       statusLine = {
         type = "command";
-        command = "bash ~/.claude/statusline-command.sh";
+        command = "wt list statusline --format=claude-code";
       };
     };
   };

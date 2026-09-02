@@ -78,36 +78,6 @@
     signer = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign";
   };
 
-  # Claude statusline script
-  home.file.".claude/statusline-command.sh" = {
-    executable = true;
-    text = ''
-      #!/bin/bash
-      input=$(cat)
-
-      # Directory: shorten $HOME to ~
-      cwd=$(echo "$input" | jq -r '.workspace.current_dir')
-      short_dir="''${cwd/#$HOME/~}"
-
-      # Git branch (skip optional locks)
-      branch=$(git -C "$cwd" rev-parse --abbrev-ref HEAD 2>/dev/null)
-
-      # Model display name
-      model=$(echo "$input" | jq -r '.model.display_name')
-
-      # Context usage
-      used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
-
-      # Build status line
-      parts="$short_dir"
-      [ -n "$branch" ] && parts="$parts  $branch"
-      parts="$parts  $model"
-      [ -n "$used" ] && parts="$parts  ctx:''${used}%"
-
-      printf "%s" "$parts"
-    '';
-  };
-
   # Claude notify.sh (terminal-notifier version for macOS)
   home.file.".claude/notify.sh" = {
     executable = true;
