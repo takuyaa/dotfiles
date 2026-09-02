@@ -731,6 +731,12 @@ in
         };
         network = {
           allowAllUnixSockets = true;
+          # ローカルポートへの bind 許可。無効だと dev server も difit も
+          # 起動できないうえ、失敗が sandbox_violations ではなく素の
+          # "Operation not permitted" として出るので、アプリ側のバグと
+          # 誤診しやすい。追加で開く通信路は allowAllUnixSockets と同種で、
+          # 増分リスクは小さいと判断した。macOS 専用の設定。
+          allowLocalBinding = true;
         };
       };
       # worktrunk のステータスライン。ディレクトリ・ブランチ・作業ツリーの
