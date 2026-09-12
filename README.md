@@ -82,24 +82,17 @@ make update
 
 Or use the `rebuild` / `flake-update` shell aliases directly.
 
-## Japanese slides → PDF pipeline
+## Japanese slide fonts
 
-日本語スライド（ppt-master 等で生成した `.pptx`）を、他人の環境でも字形が崩れない
-PDF として配布するためのフォント整備と変換ツール。
+日本語スライド（ppt-master 等で生成）を、他人の環境でも字形が崩れないように
+配布するためのフォント整備。
 
 - **デッキ主フォント `BIZ UDPGothic`**（SIL OFL, 埋め込み可）を `fonts/biz-udp/` に
   バージョン固定で vendor し、両 OS へ同一実体を配る。フォールバックは `Noto Sans CJK JP`。
   - **Linux/WSL2**: `home-linux.nix` が Nix パッケージとして導入（`rebuild` で反映）。
-    Nix の fontconfig（LibreOffice が使う）はプロファイルの `share/fonts` しか見ないため、
+    Nix の fontconfig（Nix 製アプリが使う）はプロファイルの `share/fonts` しか見ないため、
     `~/.local/share/fonts` ではなくパッケージで配る。詳細は [`fonts/biz-udp/README.md`](fonts/biz-udp/README.md)。
   - **Windows**: `windows/configuration.dsc.yaml` の `fonts-biz-udp` が per-user 登録。
-- **`pptx2pdf [-o OUTDIR] deck.pptx …`**（Linux/WSL2、`home-linux.nix` 定義）:
-  LibreOffice headless で PDF 化し、`pdffonts` で全フォントの埋め込みを検証する。
-  `BIZ UDPGothic` が無ければ即 fail（サイレント置換を防ぐ）。
-
-```bash
-pptx2pdf slides/deck.pptx     # → slides/deck.pdf（全フォント emb=yes を検証）
-```
 
 ## Karabiner-Elements (macOS): manual setup
 
