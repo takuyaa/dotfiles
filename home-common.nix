@@ -736,6 +736,7 @@ in
             "~/.npm-global"         # npm -g の prefix（NPM_CONFIG_PREFIX）
             "~/.bun"                # bun: install キャッシュとグローバル bin
             "~/.cache/nix"          # nix flake check / nix eval の fetcher lock と eval キャッシュ
+            "~/.docker"             # docker: buildx の builder 状態と CLI が更新する config.json / contexts
           ];
         };
         network = {
