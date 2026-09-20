@@ -122,6 +122,7 @@ in
     jdk
     nodejs_22
     pnpm
+    poetry
     python3
     python3Packages.huggingface-hub
     rustup
