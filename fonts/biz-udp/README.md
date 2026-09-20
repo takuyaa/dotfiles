@@ -19,7 +19,10 @@
 
 ## インストール先
 
-- **Linux / WSL2**: `home-linux.nix` が `~/.local/share/fonts/` へ配置し、`fonts.fontconfig.enable` で fc-cache。
+- **Linux / WSL2**: `home-linux.nix` が TTF を Nix パッケージに包んで profile の
+  `share/fonts/truetype/` へ配り、`fonts.fontconfig.enable` で fc-cache。
+  `~/.local/share/fonts` へ置かないのは、Nix アプリが使う fontconfig が profile の
+  `share/fonts` しか見ず、XDG ディレクトリに置いたフォントは黙って置換されるため。
 - **Windows**: `windows/configuration.dsc.yaml` の `fonts-biz-udp` Script が per-user
   (`%LOCALAPPDATA%\Microsoft\Windows\Fonts` + `HKCU` レジストリ) へ登録。
 
