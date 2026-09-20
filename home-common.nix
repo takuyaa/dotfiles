@@ -978,7 +978,14 @@ in
       set -g status-position top
       set -g status-style "bg=default,fg=white"
       set -g status-left "#[fg=green][#S] "
-      set -g status-right "#[fg=cyan]%Y-%m-%d %H:%M"
+
+      # 先頭の #(continuum_save.sh) は continuum の自動保存フック。continuum は
+      # タイマーではなくステータスバーの再描画で保存判定するので、これが
+      # status-right に載っていないと 15 分ごとの保存が一度も走らない。
+      # この extraConfig はプラグインの run-shell より後に評価されるため、
+      # 素の `set -g status-right` だと continuum が差し込んだフックを
+      # 上書きして消してしまう。順序に頼らず自分で書いておく。
+      set -g status-right "#(${pkgs.tmuxPlugins.continuum}/share/tmux-plugins/continuum/scripts/continuum_save.sh)#[fg=cyan]%Y-%m-%d %H:%M"
 
       # Window status - show git branch or directory basename
       set -g window-status-format "#I:#(tmux-window-info '#{pane_current_path}')#F"
