@@ -50,6 +50,7 @@
       "clocker"
       "codex-app"
       "deepl"
+      "drawio"
       "ghostty"
       "google-japanese-ime"
       "karabiner-elements"
