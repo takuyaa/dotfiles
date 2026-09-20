@@ -14,14 +14,12 @@
     rclone
     terraform
 
-    # Japanese slide fonts & pptx→PDF pipeline (see fonts/biz-udp/README.md).
-    # Deck font BIZ UDPGothic is vendored and shipped as a package below (NOT via
-    # home.file into ~/.local/share/fonts — Nix's fontconfig, which Nix LibreOffice
-    # uses, only scans the profile's share/fonts, so a font dropped in the XDG dir
-    # is invisible to soffice and gets silently substituted). Noto is the fallback
-    # insurance (family "Noto Sans CJK JP" — NOT the Google Fonts "Noto Sans JP",
-    # a different family). libreoffice/poppler are heavy downloads (wifi):
-    # `soffice` converts, `pdffonts` verifies.
+    # Japanese slide fonts (see fonts/biz-udp/README.md). Deck font BIZ UDPGothic
+    # is vendored and shipped as a package below (NOT via home.file into
+    # ~/.local/share/fonts — Nix's fontconfig, which Nix apps use, only scans the
+    # profile's share/fonts, so a font dropped in the XDG dir is invisible to them
+    # and gets silently substituted). Noto is the fallback insurance (family
+    # "Noto Sans CJK JP" — NOT the Google Fonts "Noto Sans JP", a different family).
     (runCommand "biz-udpgothic-fonts" { } ''
       install -Dm644 ${./fonts/biz-udp/BIZUDPGothic-Regular.ttf} \
         $out/share/fonts/truetype/BIZUDPGothic-Regular.ttf
@@ -29,75 +27,6 @@
         $out/share/fonts/truetype/BIZUDPGothic-Bold.ttf
     '')
     noto-fonts-cjk-sans
-    libreoffice
-    poppler-utils
-
-    # pptx2pdf: convert a deck to PDF in a font-installed environment and verify
-    # every font is embedded, so distributed PDFs render identically on machines
-    # without the fonts. Refuses to run if BIZ UDPGothic is absent (no silent
-    # substitution). A global bin so it works from any deck dir (ppt-master is a
-    # separate repo). Usage: pptx2pdf [-o OUTDIR] deck.pptx [more.pptx ...]
-    (writeShellScriptBin "pptx2pdf" ''
-      set -euo pipefail
-
-      # Preflight: require the deck font in the font cache. Without it soffice
-      # silently substitutes and bakes the wrong glyphs permanently into the PDF.
-      # Capture fc-list first, then match with a here-string: piping into `grep -q`
-      # under `set -o pipefail` reports failure when grep closes the pipe early and
-      # fc-list dies of SIGPIPE, which would wrongly trip this check.
-      installed_fonts="$(${pkgs.fontconfig}/bin/fc-list || true)"
-      if ! grep -qi 'BIZ UDPGothic' <<<"$installed_fonts"; then
-        echo "❌ BIZ UDPGothic が見つかりません。フォント未導入の環境では変換しません（サイレント置換防止）。" >&2
-        echo "   'rebuild' でフォントを導入してから再実行してください。" >&2
-        exit 1
-      fi
-
-      outdir=""
-      inputs=()
-      while [ $# -gt 0 ]; do
-        case "$1" in
-          -o|--outdir) outdir="$2"; shift 2 ;;
-          -h|--help)
-            echo "usage: pptx2pdf [-o OUTDIR] file.pptx [more.pptx ...]"; exit 0 ;;
-          *) inputs+=("$1"); shift ;;
-        esac
-      done
-
-      if [ ''${#inputs[@]} -eq 0 ]; then
-        echo "usage: pptx2pdf [-o OUTDIR] file.pptx [more.pptx ...]" >&2
-        exit 2
-      fi
-
-      rc=0
-      for src in "''${inputs[@]}"; do
-        if [ ! -f "$src" ]; then
-          echo "❌ 入力が見つかりません: $src" >&2
-          rc=1; continue
-        fi
-        out="''${outdir:-$(dirname "$src")}"
-        mkdir -p "$out"
-        echo "▶ 変換: $src → $out/"
-        ${pkgs.libreoffice}/bin/soffice --headless --convert-to pdf --outdir "$out" "$src"
-
-        base="$(basename "$src")"
-        pdf="$out/''${base%.*}.pdf"
-        if [ ! -f "$pdf" ]; then
-          echo "❌ 変換に失敗しました: $pdf が生成されていません" >&2
-          rc=1; continue
-        fi
-
-        # Verify every font is embedded. pdffonts' "emb" column is the 4th field;
-        # a subset embed shows emb=yes,sub=yes so this passes it too.
-        if ${pkgs.poppler-utils}/bin/pdffonts "$pdf" | tail -n +3 \
-            | awk '$4=="no"{print "  NOT EMBEDDED:",$0; bad=1} END{exit bad+0}'; then
-          echo "✅ 埋め込みOK: $pdf"
-        else
-          echo "❌ 未埋め込みフォントあり（変換環境にフォントが無い可能性）: $pdf" >&2
-          rc=1
-        fi
-      done
-      exit $rc
-    '')
 
     # Chromium + its runtime libs (RPATH-resolved) for ppt-master's opt-in
     # `visual-review` workflow, which renders each SVG page headless via
@@ -122,7 +51,7 @@
   home.sessionVariables.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
 
   # Build the fontconfig cache for profile fonts (the BIZ UDPGothic package above
-  # and noto-fonts-cjk-sans) so Nix apps like LibreOffice resolve them.
+  # and noto-fonts-cjk-sans) so Nix apps like Chromium resolve them.
   fonts.fontconfig.enable = true;
 
   # code-server systemd user service

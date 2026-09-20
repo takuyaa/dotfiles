@@ -8,9 +8,6 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `rebuild` — apply configuration changes (delegates to the Makefile)
 - `update` — update flake inputs, then rebuild
 - `nix flake check` — validate the configuration
-- `pptx2pdf [-o OUTDIR] deck.pptx …` (Linux/WSL2) — convert a slide deck to PDF with
-  LibreOffice headless and verify every font is embedded; refuses to run if the deck
-  font `BIZ UDPGothic` is missing, to prevent silent glyph substitution
 
 `git add` any new file before `rebuild`. Flakes only see Git-tracked paths, so a
 file referenced from a `.nix` expression fails evaluation while it is untracked —
