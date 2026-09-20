@@ -747,6 +747,15 @@ in
           # 誤診しやすい。追加で開く通信路は allowAllUnixSockets と同種で、
           # 増分リスクは小さいと判断した。macOS 専用の設定。
           allowLocalBinding = true;
+          # サンドボックスから許可プロンプトなしで到達できるホスト。
+          # 未指定のホストは従来どおり都度プロンプトになる
+          # （strictAllowlist は立てていないので、ここは deny リストでは
+          # なく「聞かずに通す」ホストの列挙）。一度 deny を選ぶと
+          # そのセッション中は拒否が残り続けるので、繰り返し叩く
+          # API はここに書いておく。
+          allowedDomains = [
+            "api.openai.com"
+          ];
         };
       };
       # worktrunk のステータスライン。ディレクトリ・ブランチ・作業ツリーの
