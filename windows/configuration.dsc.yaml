@@ -107,13 +107,15 @@ properties:
         id: Python.Python.3.13
         source: winget
 
-    # Japanese deck font (BIZ UDPGothic) for pptx/PDF consistency with WSL2.
+    # Japanese deck font (BIZ UDPGothic), so decks show the same glyphs here as
+    # on WSL2, which is handed the very same vendored TTFs through Nix.
     # Per-user install (no admin): copy the vendored TTFs into the per-user font
-    # dir and register them under HKCU, so LibreOffice / PowerPoint-for-web /
-    # Quick Look on this host resolve the same family as the WSL2 converter.
+    # dir and register them under HKCU, so PowerPoint for the web and Quick Look
+    # on this host resolve the family.
     # Source path assumes the repo is at C:\Users\takuy\dotfiles (same as kanata).
-    # The fallback Noto Sans CJK JP is intentionally NOT installed here — the
-    # authoritative PDF conversion runs on WSL2, which has both fonts via Nix.
+    # The fallback Noto Sans CJK JP is intentionally NOT installed here: it is too
+    # large to vendor, and Windows has no Nix to pull it from (on WSL2 it comes
+    # from noto-fonts-cjk-sans).
     - resource: PSDscResources/Script
       id: fonts-biz-udp
       directives:

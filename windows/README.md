@@ -84,10 +84,10 @@ git pull
 - **日本語デッキフォント（BIZ UDPGothic）:** `fonts-biz-udp` タスクが、リポジトリに
   vendor した `fonts/biz-udp/*.ttf`（タグ `v1.051` にピン）を per-user（管理者不要）で
   `%LOCALAPPDATA%\Microsoft\Windows\Fonts` にコピーし、`HKCU` のフォントレジストリに
-  登録します。ソースパスは `C:\Users\takuy\dotfiles` 前提。これで LibreOffice /
-  PowerPoint for the web / Quick Look が WSL2 の変換環境と同じファミリを解決します。
-  フォールバックの Noto Sans CJK JP は Windows には入れません（PDF 変換の正は
-  WSL2。WSL2 側は Nix の `noto-fonts-cjk-sans` で両フォントを導入済み）。
+  登録します。ソースパスは `C:\Users\takuy\dotfiles` 前提。これで PowerPoint for the
+  web や Quick Look が、WSL2 に配るのと同じ実体を同じファミリ名で解決します。
+  フォールバックの Noto Sans CJK JP は Windows には入れません（容量が大きく vendor して
+  いないため。Nix のある WSL2 側だけ `noto-fonts-cjk-sans` で導入済み）。
 - **WSL の mirrored ネットワーク:** `windows/wslconfig` を `%UserProfile%\.wslconfig`
   に配置し、`networkingMode=mirrored` にします。WSL が Windows のネットワーク
   スタックを共有するので、Windows 側の Tailscale 経由で WSL から tailnet（`100.x`）
