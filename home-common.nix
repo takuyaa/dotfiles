@@ -58,6 +58,14 @@ in
 
   home.stateVersion = "24.05";
 
+  # `man home-configuration.nix` を生成しない。生成には nixpkgs の
+  # nixosOptionsDoc が使われ、その options.json が nixpkgs の store path を
+  # string context なしで参照するため、rebuild のたびに
+  # "Using 'builtins.derivation' ... without a proper context" 警告が出る。
+  # 上流（nixpkgs 側）の問題で手元では直せないので、man ページを諦めて黙らせる。
+  # オプション一覧は web の Home Manager マニュアルで引ける。
+  manual.manpages.enable = false;
+
   home.packages = with pkgs; [
     # Development tools
     buf
