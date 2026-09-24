@@ -353,12 +353,15 @@ in
       # Enable color output for less
       export LESS="-R"
 
-      # GitHub token for API access (also configures Nix to avoid rate limits)
+      # Pass the gh token to Nix to avoid GitHub rate limits. Not exported as
+      # GITHUB_TOKEN, which would shadow gh's stored credentials and block
+      # `gh auth login` / `gh auth refresh`.
       if command -v gh &> /dev/null; then
-        GITHUB_TOKEN=$(gh auth token 2>/dev/null) && export GITHUB_TOKEN
-        if [ -n "$GITHUB_TOKEN" ]; then
-          export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
+        _gh_token=$(gh auth token 2>/dev/null)
+        if [ -n "$_gh_token" ]; then
+          export NIX_CONFIG="access-tokens = github.com=$_gh_token"
         fi
+        unset _gh_token
       fi
 
       # npm global prefix (Nix's nodejs is read-only)
