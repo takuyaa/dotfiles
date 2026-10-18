@@ -96,8 +96,8 @@ in
     cloudflared
     curl
     # eternal-terminal: reconnectable remote shell (client `et` + `etserver`).
-    # etserver is auto-started on login on the dev host (see home-linux.nix);
-    # connect from a client with the `etdev` command defined below.
+    # etserver is auto-started on login on the homelab host (see home-linux.nix);
+    # connect from a client with the `homelab` command defined below.
     eternal-terminal
     grpcurl
     mtr
@@ -152,21 +152,27 @@ in
       exec ${pkgs.nodejs_22}/bin/npx --yes difit "$@"
     '')
 
-    # etdev: connect to dev over Eternal Terminal (reconnectable) and land in its
-    # tmux. This is the ONLY thing that starts tmux on dev — `ssh dev` stays a raw
-    # shell. A real command (not a shell alias) so it also works non-interactively
-    # (terminal startup commands, scripts) and in any shell.
-    # - `et dev` resolves HostName/User/IdentityFile via `ssh -G dev`.
+    # homelab: connect to the homelab over Eternal Terminal (reconnectable) and
+    # land in its tmux. Named after the destination, not the transport, so the
+    # command can stay the same if the mechanism changes. This is the ONLY thing
+    # that starts tmux on homelab — `ssh homelab` stays a raw shell. A real
+    # command (not a shell alias) so it also works non-interactively (terminal
+    # startup commands, scripts) and in any shell.
+    # - `et homelab` resolves HostName/User/IdentityFile via `ssh -G homelab`.
     # - --telemetry=false: the et client defaults telemetry on.
     # - --terminal-path: et launches etterminal over a non-login ssh shell that
-    #   lacks ~/.nix-profile/bin on PATH, so point at its absolute path on dev.
+    #   lacks ~/.nix-profile/bin on PATH, so point at its absolute path on homelab.
     # - `attach || new-session`: attach to the most-recent existing session of any
     #   name, else create "main" (new-session -A only matches the exact name).
-    (writeShellScriptBin "etdev" ''
+    (writeShellScriptBin "homelab" ''
       exec ${pkgs.eternal-terminal}/bin/et \
         --telemetry=false \
         --terminal-path /home/takuya-a/.nix-profile/bin/etterminal \
-        dev -c 'tmux attach || tmux new-session -s main'
+        homelab -c 'tmux attach || tmux new-session -s main'
+    '')
+    # etdev: transitional old name for `homelab`; drop once the new name sticks.
+    (writeShellScriptBin "etdev" ''
+      exec homelab "$@"
     '')
 
     # playwright-cli: Playwright CLI for coding agents

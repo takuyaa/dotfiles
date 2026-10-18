@@ -53,8 +53,8 @@
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       copy-on-select = "clipboard";
-      # Open a plain login shell (no auto tmux). Connect to dev on demand with the
-      # `etdev` command, which is where tmux lives now (single tmux, on dev).
+      # Open a plain login shell (no auto tmux). Connect to homelab on demand with
+      # the `homelab` command, which is where tmux lives now (single tmux, on homelab).
       confirm-close-surface = false;
     };
   };

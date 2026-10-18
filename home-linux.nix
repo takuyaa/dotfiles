@@ -88,7 +88,7 @@
     # Eternal Terminal server: this dev box is a container with no systemd user
     # instance (PID 1 is sshd), so start etserver on login if not already running.
     # Listens on TCP 2022, reachable only over the Tailscale tailnet. After a pod
-    # restart, one plain `ssh dev` bootstraps it; then `etdev` reconnects-survives.
+    # restart, one plain `ssh homelab` bootstraps it; then `homelab` reconnects-survives.
     # --pidfile/--logdir must point at a writable path: the default /var/run is
     # root-only, so --daemon would abort here.
     if command -v etserver &> /dev/null && ! pgrep -x etserver &> /dev/null; then
@@ -99,13 +99,14 @@
     fi
 
     # NOTE: tmux is intentionally NOT auto-started here. dev's tmux is launched
-    # only by the `etdev` command (its `tmux attach || new-session` -c), so a plain
-    # `ssh dev` stays a raw shell with no tmux.
+    # only by the `homelab` command (its `tmux attach || new-session` -c), so a plain
+    # `ssh homelab` stays a raw shell with no tmux.
   '';
 
   # SSH host settings
   programs.ssh.settings = {
-    "dev" = {
+    # `dev` is the old name, kept as an alias.
+    "homelab dev" = {
       HostName = "100.120.98.107";
       User = "takuya-a";
       IdentityFile = "~/.ssh/id_ed25519";
