@@ -787,6 +787,9 @@ in
   # Transcript mode's line-scroll (Ctrl+n/Ctrl+p) is already emacs-style by
   # default; these add emacs-style page-scroll (Ctrl+v / Alt+v) alongside the
   # existing vi-style keys (j/k, Ctrl+b/Ctrl+f, space, b).
+  # Ctrl+v never reaches Claude Code under Windows Terminal: WT binds it to
+  # paste, and kanata's 無変換+v (= Right Ctrl+v) relies on that binding, so it
+  # stays. Page down with space / Ctrl+f there instead.
   home.file.".claude/keybindings.json" = {
     text = builtins.toJSON {
       "$schema" = "https://www.schemastore.org/claude-code-keybindings.json";
