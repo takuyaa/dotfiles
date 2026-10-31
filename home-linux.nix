@@ -9,6 +9,7 @@
     gcc
     gnumake
     code-server
+    docker # CLI + dockerd-rootless (see systemd.user.services.docker below)
     iproute2
     keychain
     rclone
@@ -69,6 +70,38 @@
       WantedBy = [ "default.target" ];
     };
   };
+
+  # Rootless Docker: dockerd runs as a systemd user service, so no root daemon and
+  # no apt install. The Nix wrapper already puts rootlesskit/slirp4netns/
+  # fuse-overlayfs on its PATH; the one host prerequisite is the setuid
+  # newuidmap/newgidmap (`sudo apt install uidmap`), which the Nix store cannot
+  # provide, picked up from /usr/bin via the systemd user manager's default PATH.
+  # Mirrors nixpkgs' virtualisation.docker.rootless unit.
+  systemd.user.services.docker = {
+    Unit = {
+      Description = "Docker Application Container Engine (Rootless)";
+      StartLimitIntervalSec = 60;
+      StartLimitBurst = 3;
+    };
+    Service = {
+      Type = "notify";
+      ExecStart = "${pkgs.docker}/bin/dockerd-rootless";
+      ExecReload = "${pkgs.procps}/bin/kill -s HUP $MAINPID";
+      TimeoutSec = 0;
+      RestartSec = 2;
+      Restart = "always";
+      LimitNOFILE = "infinity";
+      LimitNPROC = "infinity";
+      LimitCORE = "infinity";
+      Delegate = true;
+      NotifyAccess = "all";
+      KillMode = "mixed";
+    };
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
+  };
+  home.sessionVariables.DOCKER_HOST = "unix://\${XDG_RUNTIME_DIR}/docker.sock";
 
   # rebuild/update aliases (delegate to Makefile so the source of truth is one place)
   programs.bash.shellAliases.rebuild = "make -C ~/ghq/github.com/takuyaa/dotfiles rebuild";
