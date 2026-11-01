@@ -77,6 +77,12 @@
   # newuidmap/newgidmap (`sudo apt install uidmap`), which the Nix store cannot
   # provide, picked up from /usr/bin via the systemd user manager's default PATH.
   # Mirrors nixpkgs' virtualisation.docker.rootless unit.
+  #
+  # Hosts without a systemd user instance (the k8s dev pod, where PID 1 is sshd)
+  # never run this unit; profileExtra below starts the same daemon on login
+  # instead. That pod also needs AppArmor unconfined and the host sysctl
+  # described in the homelab repo (kubernetes/dev/README.md) — the default
+  # container profile denies mount(2) outright.
   systemd.user.services.docker = {
     Unit = {
       Description = "Docker Application Container Engine (Rootless)";
@@ -129,6 +135,28 @@
       etserver --port 2022 --daemon \
         --pidfile "$HOME/.local/state/et/etserver.pid" \
         --logdir "$HOME/.local/state/et" &> /dev/null || true
+    fi
+
+    # Rootless Docker where no systemd user instance exists (see the docker unit
+    # above). /run/systemd/system is systemd's own "booted with systemd" marker.
+    # dockerd-rootless.sh insists on a writable XDG_RUNTIME_DIR, and the pod's
+    # login session sets none, so give it a per-user dir under /tmp: ephemeral
+    # like the real thing, and short enough for the unix sockets created beneath
+    # it. hm-session-vars.sh has already expanded DOCKER_HOST with the empty
+    # value by this point, so re-export it. newuidmap must come from the host
+    # image (Nix cannot ship setuid binaries); without it there is nothing to do.
+    if [ ! -d /run/systemd/system ] \
+        && command -v dockerd-rootless &> /dev/null \
+        && command -v newuidmap &> /dev/null; then
+      if [ -z "$XDG_RUNTIME_DIR" ]; then
+        export XDG_RUNTIME_DIR="/tmp/xdg-runtime-$(id -u)"
+        export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
+      fi
+      mkdir -p -m 700 "$XDG_RUNTIME_DIR" "$HOME/.local/state/docker"
+      if ! pgrep -f dockerd-rootless.sh &> /dev/null; then
+        setsid -f dockerd-rootless \
+          > "$HOME/.local/state/docker/dockerd.log" 2>&1 < /dev/null || true
+      fi
     fi
 
     # NOTE: tmux is intentionally NOT auto-started here. dev's tmux is launched
