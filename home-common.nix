@@ -1,4 +1,4 @@
-{ config, pkgs, lib, username, userHome, gws-pkg, worktrunk-pkg, agent-skills, mattpocock-skills, ... }:
+{ config, pkgs, lib, username, userHome, worktrunk-pkg, agent-skills, mattpocock-skills, ... }:
 
 let
   linear-tui = pkgs.buildGoModule {
@@ -72,7 +72,7 @@ in
     codex
     postgresql
     cookiecutter
-    gws-pkg
+    gws
     copier
     fzf
     glow
