@@ -594,6 +594,9 @@ in
       };
       env = {
         ENABLE_TOOL_SEARCH = "true";
+        # セッション終了前後に出る「How is Claude doing this session?」の
+        # アンケートを出さない。
+        CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY = "1";
         # 実体の settings.json に手で入っていた値を宣言側に取り込んだもの。
         # 自動コンパクト前に使うコンテキスト幅（トークン）。
         CLAUDE_CODE_AUTO_COMPACT_WINDOW = "300000";
