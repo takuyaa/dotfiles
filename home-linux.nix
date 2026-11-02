@@ -10,6 +10,19 @@
     gnumake
     code-server
     docker # CLI + dockerd-rootless (see systemd.user.services.docker below)
+    # Claude Code's Bash sandbox on Linux: bubblewrap isolates the filesystem,
+    # socat relays network traffic to the host-side proxy (macOS uses Seatbelt
+    # and needs neither). Both need unprivileged user namespaces and mount(2),
+    # which the dev pod only got with the rootless Docker changes (AppArmor
+    # unconfined, /proc and /sys unmasked); see sandbox in home-common.nix.
+    bubblewrap
+    socat
+    # T3 Code server (`t3`): coding-agent UI driven from the phone app over the
+    # tailnet. Only the no-systemd dev pod starts it (profileExtra below); other
+    # hosts just get the CLI. Codex is left out: Claude Code already comes from
+    # ~/.local/bin. The closure still carries Electron (~3.7 GB) for the unused
+    # t3code-desktop wrapper; stubbing it would force a from-source rebuild.
+    (t3code.override { enableCodex = false; })
     iproute2
     keychain
     rclone
@@ -157,6 +170,17 @@
         setsid -f dockerd-rootless \
           > "$HOME/.local/state/docker/dockerd.log" 2>&1 < /dev/null || true
       fi
+    fi
+
+    # T3 Code server, same no-systemd fallback as above. Loopback only: the pod's
+    # entrypoint (homelab repo, kubernetes/dev/entrypoint.sh) maps
+    # https://dev.<tailnet>.ts.net/ onto 127.0.0.1:3773 with `tailscale serve`,
+    # so the phone app reaches it over Tailscale HTTPS. Pair a new device with
+    # `t3 pair --tailscale`. Data lives under ~/.t3/userdata (on the PVC).
+    if [ ! -d /run/systemd/system ] && command -v t3 &> /dev/null \
+        && ! pgrep -f 'apps/server/dist/bin.mjs serve' &> /dev/null; then
+      mkdir -p "$HOME/.local/state/t3"
+      setsid -f t3 serve > "$HOME/.local/state/t3/serve.log" 2>&1 < /dev/null || true
     fi
 
     # NOTE: tmux is intentionally NOT auto-started here. dev's tmux is launched
