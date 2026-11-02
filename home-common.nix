@@ -731,9 +731,34 @@ in
       };
       language = "japanese";
       sandbox = {
-        enabled = pkgs.stdenv.hostPlatform.isDarwin;  # bwrap unusable in unprivileged k8s pod
+        # macOS は Seatbelt、Linux は bubblewrap + socat（home-linux.nix）。
+        # k8s の dev pod は rootless Docker 対応（AppArmor Unconfined、/proc と
+        # /sys のマスク解除）で bwrap が動くようになったので、両 OS で有効。
+        enabled = true;
+        # bwrap や socat が無い・動かない環境で黙って非サンドボックスに落ちる
+        # のを防ぐ。代わりに Bash が「Sandbox is required but failed to
+        # initialize」で全滅するので、そのときはリポジトリの
+        # .claude/settings.local.json に sandbox.enabled=false を書いて切り戻す
+        # （こちらはホットリロードされる）。
+        failIfUnavailable = true;
+        # サンドボックス内で失敗したコマンドを非サンドボックスで再実行する
+        # 経路を閉じる（strict）。例外は excludedCommands で事前に決める。
         allowUnsandboxedCommands = false;
+        # macOS 専用。Go 製 CLI（gh, gcloud, terraform）の TLS 検証を proxy 下で
+        # 通す。Linux では無視される。
         enableWeakerNetworkIsolation = true;
+        # サンドボックスの外で動かすコマンド。ssh/scp は proxy 変数を無視する
+        # ので許可ホストでも届かず、kubectl は port-forward や exec が
+        # localhost 分離と衝突する。ansible は ssh 経由。文字列の前方一致なので
+        # `uv run ansible-playbook` のような間接呼び出しは別途列挙が要る。
+        # 外に出しても通常の許可フロー（auto モードなら分類器）は通る。
+        excludedCommands = [
+          "Bash(ssh:*)"
+          "Bash(scp:*)"
+          "Bash(kubectl:*)"
+          "Bash(ansible-playbook:*)"
+          "Bash(uv run ansible-playbook:*)"
+        ];
         # サンドボックスの書き込み許可はカレントディレクトリと $TMPDIR だけなので、
         # 共有キャッシュをホームに持つパッケージマネージャはここで個別に開ける。
         # 開けないと uv は "Operation not permitted" で落ち、pnpm はグローバル
@@ -742,8 +767,10 @@ in
           allowWrite = [
             "~/.cache/uv"           # uv: wheel / パッケージキャッシュ
             "~/.local/share/uv"     # uv python install, uv tool install
-            "~/Library/pnpm"        # pnpm: content-addressable store, global bin
-            "~/Library/Caches/pnpm" # pnpm: メタデータキャッシュ
+            "~/Library/pnpm"        # pnpm (macOS): content-addressable store, global bin
+            "~/Library/Caches/pnpm" # pnpm (macOS): メタデータキャッシュ
+            "~/.local/share/pnpm"   # pnpm (Linux): 同上
+            "~/.cache/pnpm"         # pnpm (Linux): 同上
             "~/.npm"                # npm/npx: _cacache（difit や playwright ラッパーが使う）
             "~/.npm-global"         # npm -g の prefix（NPM_CONFIG_PREFIX）
             "~/.bun"                # bun: install キャッシュとグローバル bin
@@ -752,6 +779,9 @@ in
           ];
         };
         network = {
+          # Linux では rootless Docker の socket（$XDG_RUNTIME_DIR/docker.sock）
+          # への経路でもある。daemon は自分のものなので、docs が警告する
+          # 「docker.sock = ホスト全権」ほどの重みはない。
           allowAllUnixSockets = true;
           # ローカルポートへの bind 許可。無効だと dev server も difit も
           # 起動できないうえ、失敗が sandbox_violations ではなく素の
@@ -767,6 +797,16 @@ in
           # API はここに書いておく。
           allowedDomains = [
             "api.openai.com"
+            # 毎セッション叩く開発インフラ。github.com は持ち出し経路にも
+            # なり得る広い許可だが、git push / gh / flake input の取得で
+            # どのみち常時使うので、都度聞かれる意味が薄い。
+            "github.com"
+            "api.github.com"
+            "*.githubusercontent.com"
+            "cache.nixos.org"
+            "registry.npmjs.org"
+            "pypi.org"
+            "files.pythonhosted.org"
           ];
         };
       };
