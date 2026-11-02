@@ -82,6 +82,13 @@ make update
 
 Or use the `rebuild` / `flake-update` shell aliases directly.
 
+Both targets finish by dropping generations older than a week and collecting
+garbage (`GC_KEEP` in the Makefile). To reclaim space without rebuilding:
+
+```bash
+make gc
+```
+
 ## Japanese slide fonts
 
 日本語スライド（ppt-master 等で生成）を、他人の環境でも字形が崩れないように

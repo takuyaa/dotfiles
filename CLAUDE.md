@@ -7,6 +7,7 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 
 - `rebuild` — apply configuration changes (delegates to the Makefile)
 - `update` — update flake inputs, then rebuild
+- `make gc` — drop generations older than `GC_KEEP` (7d) and collect garbage; `rebuild` and `update` run this at the end, so a plain `nix store gc` is rarely the right tool (every generation is a GC root)
 - `nix flake check` — validate the configuration
 
 `git add` any new file before `rebuild`. Flakes only see Git-tracked paths, so a
