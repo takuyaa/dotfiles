@@ -1047,7 +1047,21 @@ in
       # Status bar
       set -g status-position top
       set -g status-style "bg=default,fg=white"
-      set -g status-left "#[fg=green][#S] "
+      # このサーバがどのマシンで動いているかを status-left の先頭に色付きで出す。
+      # %if はサーバが conf を読む時に一度だけ評価され、各サーバが自分の #h を見る。
+      # ローカル tmux の中から homelab しても、外側・内側の bar がそれぞれ正しく名乗る。
+      # dev-0 はホスト名で判定する (StatefulSet の pod 名なので安定しており、
+      # et / kubectl exec など経路に依らない)。mac / WSL のホスト名はこの repo に
+      # 持たせず、「dev-0 でなく ssh でもない」をローカル扱いにする。
+      %if "#{==:#{host_short},dev-0}"
+        set -g @host_badge "#[bg=colour166,fg=black,bold] #h "   # dev-0: 橙
+      %elif "#{!=:#{SSH_CONNECTION},}"
+        set -g @host_badge "#[bg=colour136,fg=black,bold] #h "   # その他の remote: 黄
+      %else
+        set -g @host_badge "#[bg=colour64,fg=black,bold] #h "    # ローカル (mac / WSL): 緑
+        set -g status-position bottom   # 入れ子時に dev-0 の上段 bar と重ねない
+      %endif
+      set -g status-left "#{E:@host_badge}#[default] #[fg=green][#S] "
 
       # 先頭の #(continuum_save.sh) は continuum の自動保存フック。continuum は
       # タイマーではなくステータスバーの再描画で保存判定するので、これが
