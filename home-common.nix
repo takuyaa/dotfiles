@@ -562,6 +562,16 @@ in
 
     Before saving a memory, ask: "Could this be a one-line improvement to the
     project's CLAUDE.md instead?" If yes, do that.
+
+    ## Pull requests and commits
+
+    - Do not include the Claude Code session URL (`https://claude.ai/code/session_...`)
+      in PR descriptions or commit messages.
+    - Write PR descriptions so they stand on their own. Do not mention the
+      working context they came from (e.g. "split out from branch X",
+      "for chapter Y").
+    - When splitting changes into PRs, make one PR per item the user listed,
+      not a single combined PR.
   '';
 
   home.file.".claude/settings.json" = {
