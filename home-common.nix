@@ -751,24 +751,23 @@ in
         # .claude/settings.local.json に sandbox.enabled=false を書いて切り戻す
         # （こちらはホットリロードされる）。
         failIfUnavailable = true;
-        # サンドボックス内で失敗したコマンドを非サンドボックスで再実行する
-        # 経路を閉じる（strict）。例外は excludedCommands で事前に決める。
+        # strict: どのコマンドもサンドボックスの外では動かさない。失敗時の
+        # 非サンドボックス再実行（dangerouslyDisableSandbox）を閉じるだけでなく、
+        # excludedCommands も無効になる（2.1.319 で scp の除外が効かないことを
+        # 確認済み）。なので excludedCommands は置かない。外が要るコマンドは
+        # `! <command>` で人が実行する。該当するもの:
+        # - ssh/scp: proxy 変数を無視するので許可ホストでも届かない
+        # - kubectl: port-forward や exec が localhost 分離と衝突する
+        # - ansible-playbook: ssh 経由
+        # - .git/config を書く git 操作。サンドボックスは .git/config.lock に
+        #   /dev/null をマウントして書き込みを禁じ、"could not lock config file"
+        #   になる。switch -c/checkout -b は branch.autoSetupMerge = false で
+        #   回避済み。残るのは初回 push の upstream 記録（push 自体は通る）、
+        #   branch -m/-c（rc=128）、branch -d/-D（警告のみ）、branch -u。
         allowUnsandboxedCommands = false;
         # macOS 専用。Go 製 CLI（gh, gcloud, terraform）の TLS 検証を proxy 下で
         # 通す。Linux では無視される。
         enableWeakerNetworkIsolation = true;
-        # サンドボックスの外で動かすコマンド。ssh/scp は proxy 変数を無視する
-        # ので許可ホストでも届かず、kubectl は port-forward や exec が
-        # localhost 分離と衝突する。ansible は ssh 経由。文字列の前方一致なので
-        # `uv run ansible-playbook` のような間接呼び出しは別途列挙が要る。
-        # 外に出しても通常の許可フロー（auto モードなら分類器）は通る。
-        excludedCommands = [
-          "Bash(ssh:*)"
-          "Bash(scp:*)"
-          "Bash(kubectl:*)"
-          "Bash(ansible-playbook:*)"
-          "Bash(uv run ansible-playbook:*)"
-        ];
         # サンドボックスの書き込み許可はカレントディレクトリと $TMPDIR だけなので、
         # 共有キャッシュをホームに持つパッケージマネージャはここで個別に開ける。
         # 開けないと uv は "Operation not permitted" で落ち、pnpm はグローバル
@@ -908,6 +907,12 @@ in
       };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
+      # `git switch -c X origin/main` などで origin/main を upstream にしない。
+      # upstream は初回 push で autoSetupRemote が同名ブランチに張る（origin/main
+      # 追跡のままだと push.default=simple がブランチ名不一致で push を拒否する）。
+      # Claude のサンドボックスは .git/config への書き込みを禁じるので、
+      # ブランチ作成のたびに "could not lock config file" で落ちるのも防げる。
+      branch.autoSetupMerge = false;
       pull.ff = "only";
       core.editor = "emacs";
       gpg.ssh.allowedSignersFile = "${userHome}/.config/git/allowed_signers";
