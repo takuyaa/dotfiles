@@ -10,6 +10,8 @@ Declarative, reproducible config for macOS (Apple Silicon), Linux, and Windows.
 - `make gc` — drop generations older than `GC_KEEP` (7d) and collect garbage; `rebuild` and `update` run this at the end, so a plain `nix store gc` is rarely the right tool (every generation is a GC root)
 - `nix flake check` — validate the configuration
 
+Commit directly to `main`; do not create a branch first.
+
 `git add` any new file before `rebuild`. Flakes only see Git-tracked paths, so a
 file referenced from a `.nix` expression fails evaluation while it is untracked —
 staging is enough, no commit needed.
