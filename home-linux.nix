@@ -26,6 +26,9 @@
     iproute2
     keychain
     rclone
+    # Mount a remote directory over SSH (FUSE). Used from WSL2 to view build
+    # artefacts on the dev pod, e.g. `sshfs homelab:path ~/mnt/x`; WSL1 has no FUSE.
+    sshfs
     terraform
 
     # Japanese slide fonts (see fonts/biz-udp/README.md). Deck font BIZ UDPGothic
