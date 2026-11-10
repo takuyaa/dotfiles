@@ -751,20 +751,35 @@ in
         # .claude/settings.local.json に sandbox.enabled=false を書いて切り戻す
         # （こちらはホットリロードされる）。
         failIfUnavailable = true;
-        # strict: どのコマンドもサンドボックスの外では動かさない。失敗時の
-        # 非サンドボックス再実行（dangerouslyDisableSandbox）を閉じるだけでなく、
-        # excludedCommands も無効になる（2.1.319 で scp の除外が効かないことを
-        # 確認済み）。なので excludedCommands は置かない。外が要るコマンドは
-        # `! <command>` で人が実行する。該当するもの:
-        # - ssh/scp: proxy 変数を無視するので許可ホストでも届かない
-        # - kubectl: port-forward や exec が localhost 分離と衝突する
-        # - ansible-playbook: ssh 経由
-        # - .git/config を書く git 操作。サンドボックスは .git/config.lock に
-        #   /dev/null をマウントして書き込みを禁じ、"could not lock config file"
-        #   になる。switch -c/checkout -b は branch.autoSetupMerge = false で
-        #   回避済み。残るのは初回 push の upstream 記録（push 自体は通る）、
-        #   branch -m/-c（rc=128）、branch -d/-D（警告のみ）、branch -u。
+        # strict: 失敗時の非サンドボックス再実行（dangerouslyDisableSandbox）を
+        # 閉じる。excludedCommands は strict でも効く。ただしユーザー設定
+        # （このファイル）に書いたものだけで、strict 中はプロジェクトの
+        # .claude/settings.json / settings.local.json の entry は捨てられる。
+        # 以前 "scp の除外が効かない" と見えたのは書式の誤り: entry は
+        # 許可ルールの括弧の中身（"git push *"）であって "Bash(scp:*)" の形
+        # ではない（2.1.322 のメッセージ "list the whole command, or its start
+        # followed by ` *`, in sandbox.excludedCommands" で確認）。
         allowUnsandboxedCommands = false;
+        # サンドボックスの外で動かすコマンド。外に出しても通常の許可フロー
+        # （auto モードなら分類器）は通る。コマンド列の全部が一致したときだけ
+        # 外に出るので `git add && git push` のような連結や cd 付きは中のまま。
+        #
+        # .git/config を書く git 操作を外に出す。サンドボックスは
+        # .git/config.lock に /dev/null をマウントして書き込みを禁じ、
+        # "could not lock config file" になる。switch -c/checkout -b は
+        # branch.autoSetupMerge = false で回避済み。残っていたのが
+        # - 初回 push: push.autoSetupRemote の upstream 記録（push 自体は通る）
+        # - branch -u / --set-upstream-to
+        # で、これを毎回 `! git branch -u …` で人が打っていた。
+        #
+        # ssh/scp（proxy 変数を無視する）、kubectl（port-forward/exec が
+        # localhost 分離と衝突）、ansible-playbook（ssh 経由）は今も
+        # `! <command>` で人が実行する。外に出すなら同じ書式でここに足す。
+        excludedCommands = [
+          "git push *"
+          "git branch -u *"
+          "git branch --set-upstream-to=*"
+        ];
         # macOS 専用。Go 製 CLI（gh, gcloud, terraform）の TLS 検証を proxy 下で
         # 通す。Linux では無視される。
         enableWeakerNetworkIsolation = true;
