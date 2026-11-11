@@ -536,8 +536,14 @@ in
     # Global Claude Code Settings
 
     ~/.claude/settings.json, ~/.claude/notify.sh, and ~/.claude/keybindings.json
-    are managed by Nix (Home Manager). They are read-only symlinks and must
-    not be edited directly.
+    are managed by Nix (Home Manager). notify.sh and keybindings.json are
+    read-only symlinks and must not be edited directly.
+
+    settings.json is a writable file that `rebuild` merges the Nix-declared
+    settings into: declared keys are reset to their declared values on every
+    rebuild (arrays are replaced wholesale), undeclared keys such as `model`
+    are kept. Do not edit it by hand to change a declared key -- the edit is
+    lost on the next rebuild.
 
     To change settings:
     1. Edit ~/ghq/github.com/takuyaa/dotfiles/home-common.nix
@@ -574,8 +580,22 @@ in
       not a single combined PR.
   '';
 
-  home.file.".claude/settings.json" = {
-    text = builtins.toJSON {
+  # ~/.claude/settings.json は Nix ストアへのシンボリックリンクにせず、
+  # activation のたびにここの宣言を書き込み可能な実ファイルへマージする
+  # （mutableSettings）。`/model` のように Claude Code 自身が書き戻す設定を
+  # 手元で保存できるようにするため。マージの規則:
+  # - ここで宣言したキーは rebuild のたびに宣言値へ戻る。配列
+  #   （permissions.allow など）は丸ごと置き換わるので、手元で足した
+  #   許可は残らない。
+  # - 宣言していないキー（model など）はファイル側の値が残る。手元で
+  #   切り替えたい設定は、ここに書かないことで可変になる。
+  # - 宣言を消してもファイルからは消えない。消すときは手で削除する。
+  programs.claude-code = {
+    enable = true;
+    # CLI はネイティブインストーラで入れている（profileExtra 参照）。
+    package = null;
+    mutableSettings = true;
+    settings = {
       effortLevel = "high";
       alwaysThinkingEnabled = true;
       # Use the fullscreen (alt-screen) renderer regardless of how the shell
@@ -585,13 +605,11 @@ in
       tui = "fullscreen";
       enabledMcpjsonServers = ["linear-server"];
       enableAllProjectMcpServers = true;
-      # プラグインは宣言的に有効化する。`claude plugin ...` や `/plugin` は
-      # 有効化状態を settings.json に書き戻そうとするが、このファイルは Nix
-      # ストアへの読み取り専用シンボリックリンクなので、CLI が隣に作る一時
-      # ファイル（settings.json.tmp.*）の作成が EACCES で失敗する。
-      # `wt config plugins claude install` が落ちるのはこれが理由。
+      # プラグインは宣言的に有効化する。`claude plugin ...` や `/plugin` で
+      # 入れたものは settings.json に残るが、宣言には載らないので他のホスト
+      # へは伝わらない。常用するものはここに書く。
       # マーケットプレースの実体は起動時に ~/.claude/plugins/ 以下へ
-      # クローンされる。そこは Nix 管理外なので書き込みできる。
+      # クローンされる。
       extraKnownMarketplaces = {
         worktrunk.source = {
           source = "github";
@@ -842,8 +860,8 @@ in
       # 通知を 1 行で出す（`wt list` と同じセルを使う）。CI の取得で 1〜2 秒
       # かかることがあるが、Claude Code はこれをバックグラウンドで動かすので
       # 入力はブロックされない。自作の statusline-command.sh を置き換えた。
-      # `wt config plugins claude install-statusline` は settings.json を
-      # 直接書き換えようとして EACCES で失敗するため、ここで宣言する。
+      # `wt config plugins claude install-statusline` が書く内容と同じものを
+      # 宣言している。
       statusLine = {
         type = "command";
         command = "wt list statusline --format=claude-code";
