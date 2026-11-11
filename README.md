@@ -129,6 +129,27 @@ endpoint; `13364`/`480` = Keychron Q11, `1133`/`50489` = Logitech Lightspeed rec
 Steps 2 and 3 are covered in detail, with the symptoms and the commands to diagnose them,
 in [`ime/README.md`](./ime/README.md).
 
+## Claude Code settings
+
+Claude Code writes some settings back to `~/.claude/settings.json` itself — `/model` saves
+the default model there, for example — so that file cannot be a read-only Nix symlink
+either. `home-common.nix` declares it through Home Manager's `programs.claude-code` with
+`mutableSettings = true`, which merges the declaration into a writable file on every
+`rebuild`:
+
+| Key | On `rebuild` |
+|-----|--------------|
+| Declared in `home-common.nix` | Reset to the declared value. Arrays such as `permissions.allow` are replaced wholesale |
+| Not declared (e.g. `model`) | Kept as the file has it |
+| Declaration removed | Stays in the file until deleted by hand |
+
+So a setting becomes locally switchable by leaving it out of the declaration, and anything
+that should hold on every host goes into `home-common.nix`. A permission rule saved from a
+prompt lands in the declared `permissions.allow` array and is dropped by the next rebuild.
+
+`keybindings.json`, `notify.sh`, the global `CLAUDE.md`, and the skills remain read-only
+symlinks.
+
 ## File Structure
 
 ```text

@@ -42,6 +42,26 @@ there or in the files it includes. Nothing here needs to know they exist. The
 trade-off is that those files are outside Nix, so a new machine needs them
 recreated by hand.
 
+## Claude Code settings
+
+`~/.claude/settings.json` is declared in `home-common.nix` under
+`programs.claude-code.settings`, with `mutableSettings = true`: it is a
+writable file that each `rebuild` merges the declaration into, not a store
+symlink. The split is by whether a key is declared:
+
+- **Declared keys** are reset to the declared value on every rebuild. Arrays
+  (`permissions.allow`, `sandbox.excludedCommands`, …) are replaced wholesale,
+  so a rule added through a permission prompt does not survive — add it to
+  `home-common.nix` instead.
+- **Undeclared keys** keep whatever the file holds. That is how `/model`
+  persists a default: leave a key out of the declaration to make it locally
+  switchable, and do not declare `model`.
+- Removing a declaration does not remove the key from the file; delete it
+  there by hand.
+
+`~/.claude/keybindings.json`, `notify.sh`, `CLAUDE.md`, and the skills are
+still read-only symlinks.
+
 ## Claude-powered git aliases
 
 `home-common.nix` defines git aliases that call `claude` to generate text:
