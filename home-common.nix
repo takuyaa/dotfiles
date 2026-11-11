@@ -769,16 +769,19 @@ in
         # "could not lock config file" になる。switch -c/checkout -b は
         # branch.autoSetupMerge = false で回避済み。残っていたのが
         # - 初回 push: push.autoSetupRemote の upstream 記録（push 自体は通る）
-        # - branch -u / --set-upstream-to
-        # で、これを毎回 `! git branch -u …` で人が打っていた。
+        # - branch -u / --set-upstream-to（失敗）、branch -m/-c（名前は変わるが
+        #   rc=128 で古い branch.* 設定が残る）、branch -d/-D（警告のみ）
+        # で、upstream は毎回 `! git branch -u …` で人が打っていた。
+        # git branch はローカル参照の操作だけでネットワークにも cwd の外にも
+        # 触れないので丸ごと外に出す。git config は core.hooksPath などを
+        # 書けるので外に出さない（.git/config が守られている本来の理由）。
         #
         # ssh/scp（proxy 変数を無視する）、kubectl（port-forward/exec が
         # localhost 分離と衝突）、ansible-playbook（ssh 経由）は今も
         # `! <command>` で人が実行する。外に出すなら同じ書式でここに足す。
         excludedCommands = [
           "git push *"
-          "git branch -u *"
-          "git branch --set-upstream-to=*"
+          "git branch *"
         ];
         # macOS 専用。Go 製 CLI（gh, gcloud, terraform）の TLS 検証を proxy 下で
         # 通す。Linux では無視される。
